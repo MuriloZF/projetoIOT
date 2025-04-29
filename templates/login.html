@@ -1,0 +1,11 @@
+{% extends "loginBase.html" %}
+{% block title %} <title> Login </title> {% endblock %}
+{% block form %}
+    <form action = "http://localhost:8081/validate_credential" method = "post">
+        <p> Usuário: </p>
+        <p><input type = "text" placeholder = "Usuário" name = "user"/></p>
+        <p> Senha: </p>
+        <p><input type = "password" placeholder = "Senha" name = "password"/></p>
+        <p><input type = "submit" value = "Login"/></p>
+    </form>
+{% endblock %}
