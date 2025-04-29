@@ -21,6 +21,24 @@ def validateCredential():
         if user in users and users[user] == password:
             return render_template("home.html")
         else:
-            return "<h1> Usuário ou senha inválidos! </h1>"
+            return render_template("errors/401.html")
     else:
         return render_template("login.html")
+    
+
+@user.route("/register_user")
+def registerUser():
+    return render_template("register_user.html")    
+
+@user.route("/create_user", methods = ["POST"])
+def createUser():
+    global users
+    if request.method == "POST":
+        user = request.form["user"]
+        password = request.form["password"]
+    else:
+        user = request.args.get("user", None)
+        password = request.args.get("passowrd", None)
+    users[user] = password
+    return "<h1> Usuário adicionado </h1>"
+        
