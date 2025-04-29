@@ -1,0 +1,22 @@
+nav {
+    border-bottom: 1px solid #590e0e;
+    display: flex;
+  }
+  
+  .header ol {
+    list-style-type: none;
+    padding-left: 0;
+  }
+  
+  .header {
+    display: inline-block;
+  }
+  
+  .header a::after {
+    display: inline-block;
+    color: #590e0e;
+    content: "|";
+    font-size: 80%;
+    font-weight: bold;
+    padding: 0 3px;
+  }
