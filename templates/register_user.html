@@ -1,12 +1,7 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar usuário</title>
-</head>
-<body>
-    <h1> Criar usuário: </h1>
+{% extends "base.html" %}
+{%block title %} <title> Gerenciar Usuários </title> {% endblock %}
+{% block body %}
+<h1> Criar usuário: </h1>
     <form action = "http://localhost:8081/create_user" method = "post">
         <p> Usuário: </p>
         <p><input type = "text" placeholder = "Usuário" name = "user" required/></p>
@@ -14,5 +9,4 @@
         <p><input type = "password" placeholder = "Senha" name = "password" required/></p>
         <p><input type = "submit" value = "Criar usuário"/></p>
     </form>
-</body>
-</html>
+{% endblock %}
