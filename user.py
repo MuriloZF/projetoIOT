@@ -40,5 +40,23 @@ def createUser():
         user = request.args.get("user", None)
         password = request.args.get("passowrd", None)
     users[user] = password
-    return "<h1> Usuário adicionado </h1>"
-        
+    return render_template("manage_user.html", device = users)
+
+@user.route("/manage_user")
+def manageUser():
+    return render_template("manage_user.html", device = users)
+
+@user.route("/remove_user")
+def removeUser():
+    global users
+    return render_template("remove_user.html", device = users)
+
+@user.route("/del_user", methods = ["GET","POST"])
+def delUser():
+    global users
+    if request.method == "POST":
+        user = request.form['user']
+    else:
+        user = request.args.get['user', None]
+    users.pop(user)
+    return render_template("manage_user.html", device = users)
