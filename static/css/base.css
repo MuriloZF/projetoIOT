@@ -117,3 +117,16 @@ form input {
   margin: 5px;
 }
 
+.table {
+  text-align: center;
+  padding: 5rem 35rem;
+}
+
+.table input{
+  margin: 5px;
+}
+
+td, th {
+  margin: 5px;
+  border: 1px solid black;
+}

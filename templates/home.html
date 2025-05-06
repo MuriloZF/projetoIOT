@@ -1,2 +1,6 @@
-{% extends "base.html" %}
+{% if privilegio == 1 %}
+    {% extends "baseAdmin.html" %}
+{% else %}
+    {% extends "baseUser.html" %}    
+{% endif %}
 {% block title %} <title> Home </title> {% endblock %}

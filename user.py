@@ -26,7 +26,11 @@ def validateCredential():
         user = request.form["user"]
         password = request.form["password"]
         if user in users and users[user] == password or user in admins and admins[user]== password:
-            return render_template("home.html")
+            if user in admins:
+                privilegio = 1
+            else:
+                privilegio = 0
+            return render_template("home.html", privilegio = privilegio)
         else:
             return render_template("errors/401.html")
     else:

@@ -1,20 +1,22 @@
 {% extends "base.html" %}
 {%block title %} <title> Gerenciar Usuários </title> {% endblock %}
 {% block body %}
-    <h1> Gerenciar usuários: </h1>
-        <table>
-            <tr>
-                <th>Nome</th>
-                <th>Senha</th>
-            </tr>
-            {% for key, value in device.items() %}
-                <form action = "/del_user" method = "post">
-                    <tr>
-                        <td>{{key}}</td> <input type = "hidden" name = "user" value = "{{key}}"/>
-                        <td>{{value}}</td>
-                        <td><input type = "submit" class = "button" value = "Remover"/></td>
-                    </tr>
-                </form>
-            {% endfor %}
-        </table>
+        <h1> Gerenciar usuários: </h1>
+        <div class = "table">
+            <table>
+                <tr>
+                    <th>Nome</th>
+                    <th>Senha</th>
+                </tr>
+                {% for key, value in device.items() %}
+                    <form action = "/del_user" method = "post">
+                        <tr>
+                            <td>{{key}}</td> <input type = "hidden" name = "user" value = "{{key}}"/>
+                            <td>{{value}}</td>
+                            <td><input type = "submit" class = "button" value = "Remover"/></td>
+                        </tr>
+                    </form>
+                {% endfor %}
+            </table>
+    </div>
 {% endblock %}
