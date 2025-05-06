@@ -51,13 +51,11 @@ def createUser():
     else:
         user = request.args.get("user", None)
         password = request.args.get("password", None)
-    if privilegio == 1:
+    if privilegio == "1":
         admins[user] = password
-        privilegio = "Administrador"
-    elif privilegio == 0:
+    elif privilegio == "0":
         users[user] = password
-        privilegio = "Usuário"
-    return render_template("manage_user.html", device = users, adm = admins, funcao = privilegio)
+    return render_template("manage_user.html", device = users, adm = admins)
 
 @user.route("/manage_user")
 def manageUser():
@@ -71,4 +69,4 @@ def delUser():
     else:
         user = request.args.get['user', None]
     users.pop(user)
-    return render_template("manage_user.html", device = users)
+    return render_template("manage_user.html", device = users, adm = admins)
