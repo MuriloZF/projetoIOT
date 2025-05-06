@@ -47,15 +47,21 @@ def createUser():
     if request.method == "POST":
         user = request.form["user"]
         password = request.form["password"]
+        privilegio = request.form["privilégio"]
     else:
         user = request.args.get("user", None)
-        password = request.args.get("passowrd", None)
-    users[user] = password
-    return render_template("manage_user.html", device = users)
+        password = request.args.get("password", None)
+    if privilegio == 1:
+        admins[user] = password
+        privilegio = "Administrador"
+    elif privilegio == 0:
+        users[user] = password
+        privilegio = "Usuário"
+    return render_template("manage_user.html", device = users, adm = admins, funcao = privilegio)
 
 @user.route("/manage_user")
 def manageUser():
-    return render_template("manage_user.html", device = users)
+    return render_template("manage_user.html", device = users, adm = admins)
 
 
 @user.route("/del_user", methods = ["GET","POST"])

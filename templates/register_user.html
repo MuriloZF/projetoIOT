@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "baseAdmin.html" %}
 {%block title %} <title> Gerenciar Usuários </title> {% endblock %}
 {% block body %}
     <h1> Registrar usuários: </h1>
@@ -7,6 +7,11 @@
         <p><input type = "text" placeholder = "Usuário" name = "user" required/></p>
         <p> Senha: </p>
         <p><input type = "password" placeholder = "Senha" name = "password" required/></p>
+        <p> Privilégio: </p>
+        <select name = "privilégio">
+            <option value = "0">Usuário</option>
+            <option value = "1">Administrador</option>
+        </select>
         <p><input type = "submit" value = "Criar usuário"/></p>
     </form>
 {% endblock %}
