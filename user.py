@@ -8,6 +8,13 @@ users = {
     "user2" : "1234"
 }
 
+admins = {
+    "admin1" : "1234",
+    "admin2" : "1234",
+    "admin3" : "1234"
+}
+
+
 @user.route("/")
 def index():
     return render_template("login.html")
@@ -18,7 +25,7 @@ def validateCredential():
     if request.method == "POST":
         user = request.form["user"]
         password = request.form["password"]
-        if user in users and users[user] == password:
+        if user in users and users[user] == password or user in admins and admins[user]== password:
             return render_template("home.html")
         else:
             return render_template("errors/401.html")
@@ -46,10 +53,6 @@ def createUser():
 def manageUser():
     return render_template("manage_user.html", device = users)
 
-@user.route("/remove_user")
-def removeUser():
-    global users
-    return render_template("remove_user.html", device = users)
 
 @user.route("/del_user", methods = ["GET","POST"])
 def delUser():
