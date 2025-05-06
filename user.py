@@ -63,7 +63,6 @@ def createUser():
 def manageUser():
     return render_template("manage_user.html", device = users, adm = admins)
 
-
 @user.route("/del_user", methods = ["GET","POST"])
 def delUser():
     global users

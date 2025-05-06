@@ -1,0 +1,12 @@
+{% extends "baseAdmin.html" %}
+{% block title %} <title> Adicionar sensor </title> {% endblock %}
+{% block body %}
+    <h1> Registrar sensores: </h1>
+    <form action="http://localhost:8081/create_sensor" method="post">
+        <p>Sensor: </p>
+        <p><input type="text" placeholder="Nome do sensor" name="sensor" required></p>
+        <p>Valor:</p>
+        <p><input type="text" placeholder="Valor(mqtt automatico)" name="valor" required></p>
+        <p><input type="submit" value="Registrar"></p>
+    </form>
+{% endblock %}
