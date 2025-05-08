@@ -14,22 +14,31 @@ admins = {
     "admin3" : "1234"
 }
 
+privilegioSession = None
 
 @user.route("/")
 def index():
     return render_template("login.html")
 
+@user.route("/home")
+def home():
+    return render_template("home.html", privilegio = privilegioSession)
+
 @user.route("/validate_credential", methods = ["POST"])
 def validateCredential():
     global users
+    global privilegioSession
     if request.method == "POST":
         user = request.form["user"]
         password = request.form["password"]
         if user in users and users[user] == password or user in admins and admins[user]== password:
             if user in admins:
                 privilegio = 1
+                privilegioSession = 1
             else:
                 privilegio = 0
+                privilegioSession = 0
+            print(privilegioSession)    
             return render_template("home.html", privilegio = privilegio)
         else:
             return render_template("errors/401.html")

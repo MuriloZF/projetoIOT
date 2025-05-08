@@ -7,9 +7,6 @@ app = Flask("__name__")
 app.register_blueprint(user, url_prefix = "/")
 app.register_blueprint(sensor, url_prefix = "/")
 
-@app.route("/home")
-def home():
-    return render_template("home.html")
 
 @app.errorhandler(404)
 def pageNotFound(error):
