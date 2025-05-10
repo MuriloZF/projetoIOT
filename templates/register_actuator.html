@@ -1,0 +1,12 @@
+{% extends "baseAdmin.html" %}
+{% block title %} <title> Adicionar atuador </title> {% endblock %}
+{% block body %}
+    <h1> Registrar atuadores: </h1>
+    <form action="http://localhost:8081/create_actuator" method="post">
+        <p>Atuador: </p>
+        <p><input type="text" placeholder="Nome do atuador" name="actuator" required></p>
+        <p>Valor:</p>
+        <p><input type="text" placeholder="Valor(mqtt automatico)" name="valor" required></p>
+        <p><input type="submit" value="Registrar"></p>
+    </form>
+{% endblock %}

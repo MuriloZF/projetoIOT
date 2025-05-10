@@ -1,12 +1,13 @@
 from flask import Flask, render_template, request
 from user import user
 from sensor import sensor
+from actuator import actuator
 
 app = Flask("__name__")
 
 app.register_blueprint(user, url_prefix = "/")
 app.register_blueprint(sensor, url_prefix = "/")
-
+app.register_blueprint(actuator, url_prefix = "/")
 
 @app.errorhandler(404)
 def pageNotFound(error):

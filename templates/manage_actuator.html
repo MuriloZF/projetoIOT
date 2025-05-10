@@ -1,0 +1,20 @@
+{% extends "baseAdmin.html" %}
+{% block title %} <title>Gerenciar atuadores</title> {% endblock %}
+{% block body %}
+<h1>Remover atuadores</h1>
+    <div class="table">
+        <table>
+            <tr>
+                <th>Nome</th>
+            </tr>
+            {% for key, value in device.items() %}
+                <form action="http://localhost:8081/del_actuator" method="post">
+                    <tr>
+                        <td>{{key}}</td> <input type="hidden" name="actuator" value="{{key}}">
+                        <td><input type="submit" value="Remover"></td>
+                    </tr>
+                </form>
+            {% endfor %}
+        </table>    
+    </div>
+{% endblock %}
