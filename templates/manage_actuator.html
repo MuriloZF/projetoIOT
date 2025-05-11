@@ -1,7 +1,10 @@
 {% extends "baseAdmin.html" %}
-{% block title %} <title>Gerenciar atuadores</title> {% endblock %}
+{% block title %} 
+    <title>Gerenciar atuadores</title> 
+    <script src = "/static/js/update_actuator.js"></script> 
+{% endblock %}
 {% block body %}
-<h1>Remover atuadores</h1>
+<h1>Gerenciar atuadores</h1>
     <div class="table">
         <table>
             <tr>
@@ -14,9 +17,32 @@
                         <td>{{key}}</td> <input type="hidden" name="actuator" value="{{key}}">
                         <td>{{value}}</td> <input type="hidden" name="actuator" value="{{value}}">
                         <td><input type="submit" value="Remover"></td>
+                        <td><button type="button" class="button" onclick="showUpdateForm('{{ key }}')">Atualizar</button></td>
                     </tr>
                 </form>
             {% endfor %}
         </table>    
+    </div>
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Atualizar Atuador</h2>
+            <form action="/update_actuator" method="post">
+                <input type="hidden" id="updateActuator" name="actuator" />
+                <label for="field">Campo a atualizar:</label>
+                <select name="field" id="field" required onchange="toggleInput()">
+                    <option value="">--Escolha uma opção--</option>
+                    <option value="actuator">Atuador</option>
+                    <option value="valor">Valor</option>
+                </select>
+                <div id="actuatorField" style="display:none;">
+                    <input type="text" placeholder="Novo atuador" name="new_actuator" />
+                </div>
+                <div id="valorField" style="display:none;">
+                    <input type="text" placeholder="Novo valor" name="new_valor" />
+                </div>
+                <button type="submit">Atualizar</button>
+            </form>
+        </div>
     </div>
 {% endblock %}

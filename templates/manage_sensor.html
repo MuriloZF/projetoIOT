@@ -1,20 +1,48 @@
 {% extends "baseAdmin.html" %}
-{% block title %} <title>Gerenciar sensores</title> {% endblock %}
+{% block title %}
+    <script src = "/static/js/update_sensor.js"></script> 
+    <title>Gerenciar sensores</title> 
+{% endblock %}
 {% block body %}
-<h1>Remover sensores</h1>
+<h1>Gerenciar sensores</h1>
     <div class="table">
         <table>
             <tr>
-                <th>Nome</th>
+                <th>Sensor</th>
+                <th>Valor</th>
             </tr>
             {% for key, value in device.items() %}
                 <form action="http://localhost:8081/del_sensor" method="post">
                     <tr>
                         <td>{{key}}</td> <input type="hidden" name="sensor" value="{{key}}">
+                        <td>{{value}}</td> <input type="hidden" name="valor" value="{{value}}">
                         <td><input type="submit" value="Remover"></td>
+                        <td><button type="button" class="button" onclick="showUpdateForm('{{ key }}')">Atualizar</button></td>
                     </tr>
                 </form>
             {% endfor %}
         </table>    
+    </div>
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Atualizar Sensor</h2>
+            <form action="/update_sensor" method="post">
+                <input type="hidden" id="updateSensor" name="sensor" />
+                <label for="field">Campo a atualizar:</label>
+                <select name="field" id="field" required onchange="toggleInput()">
+                    <option value="">--Escolha uma opção--</option>
+                    <option value="sensor">Sensor</option>
+                    <option value="valor">Valor</option>
+                </select>
+                <div id="sensorField" style="display:none;">
+                    <input type="text" placeholder="Novo sensor" name="new_sensor" />
+                </div>
+                <div id="valorField" style="display:none;">
+                    <input type="text" placeholder="Novo valor" name="new_valor" />
+                </div>
+                <button type="submit">Atualizar</button>
+            </form>
+        </div>
     </div>
 {% endblock %}
