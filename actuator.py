@@ -36,29 +36,3 @@ def del_actuator():
         actuator = request.args.get["actuator", None]
     actuators.pop(actuator)
     return render_template("manage_actuator.html", device=actuators)
-
-@actuator.route("/update_actuator", methods=["GET", "POST"])
-def updUser():
-    global actuators
-    if request.method == "POST":
-        actuator = request.form["actuator"]
-        field = request.form["field"]
-    else:
-        actuator = request.form.get("actuator")
-        field = request.form.get("field")
-
-    if not actuator or actuator not in actuators:
-        return "Usuário não encontrado.", 400
-
-    if field == "actuator":
-        new_actuator = request.form["new_actuator"]
-        if new_actuator:
-            actuators[new_actuator] = actuators.pop(actuator)
-    elif field == "valor":
-        new_valor = request.form["new_valor"]
-        if new_valor:
-            actuators[actuator] = new_valor
-    else:
-        return "Campo inválido.", 400
-
-    return redirect("/manage_actuator")
