@@ -10,8 +10,6 @@ users_dict = {
 
 admins_dict = {
     "admin1": "1234",
-    "admin2": "1234",
-    "admin3": "1234"
 }
 
 @user_bp.route("/")
