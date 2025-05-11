@@ -10,8 +10,6 @@ users = {
 
 admins = {
     "admin1" : "1234",
-    "admin2" : "1234",
-    "admin3" : "1234"
 }
 
 privilegioSession = None
