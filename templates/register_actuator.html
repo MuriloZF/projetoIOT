@@ -4,7 +4,7 @@
 <div class="container mx-auto px-4 py-8">
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 md:p-8 max-w-2xl mx-auto">
         <h1 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">Registrar Novo Atuador</h1>
-        <form action="{{ url_for("actuator.create_actuator") }}" method="post" class="space-y-6">
+        <form action="{{ url_for("actuator_main.register_actuator_page") }}" method="post" class="space-y-6">
             <div>
                 <label for="actuator_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome do Atuador:</label>
                 <input type="text" id="actuator_name" name="actuator_name" placeholder="Ex: Ventilador Quarto" required 

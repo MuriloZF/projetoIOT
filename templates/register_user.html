@@ -1,17 +1,40 @@
 {% extends "baseAdmin.html" %}
-{%block title %} <title> Gerenciar Usuários </title> {% endblock %}
+{% block title %} <title> Registrar Usuário </title> {% endblock %}
 {% block body %}
-    <h1> Registrar usuários: </h1>
-    <form action = "http://localhost:5000/create_user" method = "post">
-        <p> Usuário: </p>
-        <p><input type = "text" placeholder = "Usuário" name = "user" required/></p>
-        <p> Senha: </p>
-        <p><input type = "password" placeholder = "Senha" name = "password" required/></p>
-        <p> Privilégio: </p>
-        <select name = "privilégio">
-            <option value = "0">Usuário</option>
-            <option value = "1">Administrador</option>
-        </select>
-        <p><input type = "submit" value = "Criar usuário"/></p>
-    </form>
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 md:p-8 max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">Registrar Novo Usuário</h1>
+        <form action="{{ url_for('user.register_user_page') }}" method="post" class="space-y-6">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome de Usuário:</label>
+                <input type="text" id="username" name="username" placeholder="Ex: novo_usuario" required 
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Senha:</label>
+                <input type="password" id="password" name="password" placeholder="Senha" required 
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            <div>
+                <label for="privilegio" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Privilégio:</label>
+                <select id="privilegio" name="privilegio" 
+                        class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+                    <option value="0">Usuário</option>
+                    <option value="1">Administrador</option>
+                </select>
+            </div>
+            
+            {% if error %}
+                <div class="text-red-500 text-sm">{{ error }}</div>
+            {% endif %}
+            
+            <div class="flex justify-center">
+                <button type="submit" 
+                        class="w-full md:w-auto flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-custom-red hover:bg-custom-red-darker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150">
+                    Registrar Usuário
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

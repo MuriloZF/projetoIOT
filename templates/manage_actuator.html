@@ -5,7 +5,7 @@
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 md:p-8">
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Gerenciar Atuadores Registrados</h1>
-            <a href="{{ url_for("actuator_new.register_actuator_page") }}" 
+            <a href="{{ url_for('actuator_main.register_actuator_page') }}" 
                class="bg-custom-red hover:bg-custom-red-darker text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition-colors duration-150">
                 Registrar Novo Atuador
             </a>
@@ -31,9 +31,8 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device_info.status_topic if device_info.status_topic else "N/A" }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device_info.state }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
-                                    {# TODO: Implementar rota de exclusão e formulário #}
-                                    <form action="{{ url_for("actuator_new.delete_actuator", actuator_id=device_info.id) }}" method="post" onsubmit="return confirm("Tem certeza que deseja remover este atuador?");" class="inline">
-                                        <input type="hidden" name="actuator_id_to_delete" value="{{ device_info.id }}"> {# Assuming device_info has an id #}
+                                    <form action="{{ url_for('actuator_main.delete_actuator', actuator_id=device_info.id) }}" method="post" onsubmit="return confirm('Tem certeza que deseja remover este atuador?');" class="inline">
+                                        <input type="hidden" name="actuator_id_to_delete" value="{{ device_info.id }}">
                                         <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-150">Remover</button>
                                     </form>
                                 </td>
@@ -48,4 +47,3 @@
     </div>
 </div>
 {% endblock %}
-
