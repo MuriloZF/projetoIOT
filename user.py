@@ -77,3 +77,28 @@ def delUser():
         user = request.args.get['user', None]
     users.pop(user)
     return render_template("manage_user.html", device = users, adm = admins)
+
+@user.route("/update_user", methods=["GET", "POST"])
+def updUser():
+    global users
+    if request.method == "POST":
+        user = request.form.get("user")
+        field = request.form.get("field")
+
+        if not user or user not in users:
+            return "Usuário não encontrado.", 400
+
+        if field == "user":
+            new_user = request.form.get("new_user")
+            if new_user:
+                users[new_user] = users.pop(user)
+        elif field == "password":
+            new_password = request.form.get("new_password")
+            if new_password:
+                users[user] = new_password
+        else:
+            return "Campo inválido.", 400
+
+    return redirect("/manage_user")
+
+    

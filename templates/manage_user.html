@@ -1,5 +1,8 @@
 {% extends "baseAdmin.html" %}
-{%block title %} <title> Gerenciar Usuários </title> {% endblock %}
+{%block title %}
+    <script src = "/static/js/update_user.js"></script> 
+    <title> Gerenciar Usuários </title> 
+{% endblock %}
 {% block body %}
         <h1> Gerenciar usuários: </h1>
         <div class = "table">
@@ -13,11 +16,14 @@
                     <form action = "/del_user" method = "post">
                         <tr>
                             <td>{{key}}</td> <input type = "hidden" name = "user" value = "{{key}}"/>
-                            <td>{{value}}</td>
+                            <td>{{value}}</td> <input type = "hidden" name = "password"
+                                                      value = "{{value}}">
                             <td>Usuário</td>
                             <td><input type = "submit" class = "button" value = "Remover"/></td>
-                        </tr>
+                            <td><button type="button" class="button"
+                                        onclick="showUpdateForm('{{ key }}')">Atualizar</button></td>
                     </form>
+                        </tr>
                 {% endfor %}
                 {% for key, value in adm.items()%}
                     <form action = "/del_user" method = "post">
@@ -29,5 +35,27 @@
                     </form>
                 {% endfor %}
             </table>
+    </div>
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Atualizar Usuário</h2>
+            <form action="/update_user" method="post">
+                <input type="hidden" id="updateUser" name="user" />
+                <label for="field">Campo a atualizar:</label>
+                <select name="field" id="field" required onchange="toggleInput()">
+                    <option value="">--Escolha uma opção--</option>
+                    <option value="user">User</option>
+                    <option value="password">Senha</option>
+                </select>
+                <div id="nomeField" style="display:none;">
+                    <input type="text" placeholder="Novo user" name="new_user" />
+                </div>
+                <div id="senhaField" style="display:none;">
+                    <input type="password" placeholder="Nova senha" name="new_password" />
+                </div>
+                <button type="submit">Atualizar</button>
+            </form>
+        </div>
     </div>
 {% endblock %}
