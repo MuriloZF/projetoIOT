@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1">
+    <title>{% block title %}Term Control - Admin{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/logo.png') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:400,700">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+            color: #f3f4f6; /* text-gray-100 */
+        }
+        .nav-link-admin {
+            @apply py-1 px-2 text-xs text-center text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors duration-150;
+        }
+        .admin-menu-item {
+            @apply flex items-center p-2 text-gray-100 rounded-lg hover:bg-gray-700;
+        }
+        .admin-card {
+            @apply bg-gray-800 shadow-lg rounded-lg p-6 mb-6;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'custom-red': '#590e0e',
+                        'custom-red-darker': '#400a0a',
+                    }
+                }
+            }
+        }
+    </script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="min-h-screen">
+
+<!-- Admin Navigation -->
+<nav class="bg-gray-800 border-b border-gray-700 fixed w-full z-20 top-0">
+    <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+        <a href="{{ url_for('home_page_dashboard') }}" class="flex items-center space-x-3 rtl:space-x-reverse">
+            <span class="self-center text-2xl font-semibold whitespace-nowrap text-red-400">Term Control</span>
+        </a>
+        <div class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+            <div class="relative">
+                <button type="button" class="flex text-sm bg-gray-700 rounded-full md:me-0 focus:ring-4 focus:ring-gray-600" id="admin-menu-button">
+                    <span class="sr-only">Open user menu</span>
+                    <div class="w-8 h-8 rounded-full bg-custom-red flex items-center justify-center text-white font-bold">
+                        {{ session.get('user_id', 'A')[0]|upper }}
+                    </div>
+                </button>
+                <!-- Dropdown menu -->
+                <div class="hidden absolute right-0 z-50 my-2 text-base list-none bg-gray-700 divide-y divide-gray-600 rounded-lg shadow" id="admin-dropdown">
+                    <div class="px-4 py-3">
+                        <span class="block text-sm text-white">{{ session.get('user_id', 'Admin') }}</span>
+                        <span class="block text-sm text-gray-400 truncate">Administrador</span>
+                    </div>
+                    <ul class="py-2">
+                        <li>
+                            <a href="{{ url_for('user.logout') }}" class="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-600 hover:text-white">Sair</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-admin">
+            <ul class="flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-600 rounded-lg bg-gray-800 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0">
+                <li>
+                    <a href="{{ url_for('home_page_dashboard') }}" class="block py-2 px-3 text-white bg-red-400 rounded md:bg-transparent md:text-red-400 md:p-0" aria-current="page">Dashboard</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('user.manage_user_page') }}" class="block py-2 px-3 text-gray-300 rounded hover:bg-gray-700 hover:text-white md:hover:bg-transparent md:hover:text-red-400 md:p-0">Usuários</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('sensor_main.manage_sensors_page') }}" class="block py-2 px-3 text-gray-300 rounded hover:bg-gray-700 hover:text-white md:hover:bg-transparent md:hover:text-red-400 md:p-0">Sensores</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('actuator_main.manage_actuators_page') }}" class="block py-2 px-3 text-gray-300 rounded hover:bg-gray-700 hover:text-white md:hover:bg-transparent md:hover:text-red-400 md:p-0">Atuadores</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('detailed_dashboard_page') }}" class="block py-2 px-3 text-gray-300 rounded hover:bg-gray-700 hover:text-white md:hover:bg-transparent md:hover:text-red-400 md:p-0">Controle</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed top-16 left-0 z-10 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
+    <div class="h-full px-3 py-4 overflow-y-auto bg-gray-800">
+        <ul class="space-y-2 font-medium">
+            <li>
+                <a href="{{ url_for('user.register_user_page') }}" class="admin-menu-item">
+                    <span class="ms-3">Adicionar Usuário</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('sensor_main.register_sensor_page') }}" class="admin-menu-item">
+                    <span class="ms-3">Registrar Sensor</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('actuator_main.register_actuator_page') }}" class="admin-menu-item">
+                    <span class="ms-3">Registrar Atuador</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('detailed_dashboard_page') }}#eventHistory" class="admin-menu-item">
+                    <span class="ms-3">Histórico de Comandos</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</aside>
+
+<main class="pt-20 pb-10 pl-72 pr-4 sm:pr-6 lg:pr-8 max-w-screen-2xl">
+    {% block body %}{% endblock %}
+</main>
+
+<footer class="w-full bg-gray-800 shadow-md mt-auto">
+    <div class="max-w-screen-xl mx-auto px-4 py-6 text-center text-gray-400">
+        <p>&copy; 2025 Term Control. Todos os direitos reservados.</p>
+    </div>
+</footer>
+
+<script>
+    // Admin menu toggle
+    const adminMenuButton = document.getElementById('admin-menu-button');
+    const adminMenu = document.getElementById('admin-dropdown');
+    
+    if(adminMenuButton && adminMenu) {
+        adminMenuButton.addEventListener('click', () => {
+            adminMenu.classList.toggle('hidden');
+        });
+    }
+
+    // Force dark mode
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('color-theme', 'dark');
+</script>
+</body>
+</html>

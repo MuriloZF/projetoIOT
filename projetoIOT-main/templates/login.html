@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:400,700">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/logo.png') }}">
+</head>
+<body>
+    <nav class="header">
+        <p class="logo">Term Control</p>
+    </nav>
+    <form action="{{ url_for('user.login_page') }}" method="post">
+        <p>Usuário:</p>
+        <p><input type="text" placeholder="Usuário" name="username" required></p>
+        <p>Senha:</p>
+        <p><input type="password" placeholder="Senha" name="password" required></p>
+        <p><input type="submit" value="Login"></p>
+        {% if error %}
+            <p style="color:red;">{{ error }}</p>
+        {% endif %}
+        <p>Não tem uma conta? <a href="{{ url_for('user.register_user_page') }}">Registre-se aqui</a></p>
+    </form>
+</body>
+</html>

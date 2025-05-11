@@ -1,0 +1,194 @@
+{% if privilegio == 1 %}
+    {% extends "baseAdmin.html" %}
+{% else %}
+    {% extends "baseUser.html" %}    
+{% endif %}
+
+{% block title %} <title> Dashboard Detalhado - IoT </title> {% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+        <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">Painel de Controle Detalhado</h2>
+
+        <!-- Display Sensores -->
+        <div class="data-display bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow mb-8">
+            <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Dados dos Sensores</h3>
+            <div id="detailed-sensor-data-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p id="detailed-sensor-loading-status" class="text-gray-600 dark:text-gray-400 md:col-span-full text-center">Carregando dados dos sensores...</p>
+                {# Sensor data will be populated by JavaScript #}
+            </div>
+        </div>
+
+        <!-- Display Atuadores e Controles -->
+        <div class="actuator-controls bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow mb-8">
+            <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Controle de Atuadores</h3>
+            <div id="detailed-actuators-container" class="space-y-4">
+                <p id="detailed-actuator-loading-status" class="text-gray-600 dark:text-gray-400 text-center">Carregando atuadores...</p>
+                {# Actuator controls will be populated by JavaScript #}
+            </div>
+        </div>
+
+        <!-- Histórico de Comandos -->
+        <div id="commandHistorySection" class="history-display bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow">
+            <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Histórico de Comandos</h3>
+            <div id="detailed-command-history-container" class="max-h-96 overflow-y-auto space-y-2 text-sm">
+                <p class="text-gray-600 dark:text-gray-400 text-center">Nenhum histórico de comandos disponível.</p>
+                {# Command history will be populated by JavaScript #}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const detailedSensorDataContainer = document.getElementById("detailed-sensor-data-container");
+    const detailedSensorLoadingStatus = document.getElementById("detailed-sensor-loading-status");
+    const detailedActuatorsContainer = document.getElementById("detailed-actuators-container");
+    const detailedActuatorLoadingStatus = document.getElementById("detailed-actuator-loading-status");
+    const detailedCommandHistoryContainer = document.getElementById("detailed-command-history-container");
+
+    function renderDetailedSensors(sensors) {
+        if (detailedSensorLoadingStatus) detailedSensorLoadingStatus.style.display = "none";
+        detailedSensorDataContainer.innerHTML = ""; // Clear previous
+        if (Object.keys(sensors).length === 0) {
+            detailedSensorDataContainer.innerHTML = 
+            "<p class=\"text-gray-600 dark:text-gray-400 md:col-span-full text-center\">Nenhum sensor registrado ou dados disponíveis.</p>";
+            return;
+        }
+        for (const sensorId in sensors) {
+            const sensor = sensors[sensorId];
+            const card = document.createElement("div");
+            card.className = "sensor-card bg-white dark:bg-gray-800 p-4 rounded shadow";
+            card.innerHTML = `
+                <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-200">${sensor.name} (${sensor.id})</h4>
+                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">${sensor.value} ${sensor.data_type || ""}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Tópico: ${sensor.topic}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Última atualização: ${sensor.timestamp}</p>
+            `;
+            detailedSensorDataContainer.appendChild(card);
+        }
+    }
+
+    function renderDetailedActuators(actuators, userPrivilegio) {
+        if (detailedActuatorLoadingStatus) detailedActuatorLoadingStatus.style.display = "none";
+        detailedActuatorsContainer.innerHTML = ""; // Clear previous
+        if (Object.keys(actuators).length === 0) {
+            detailedActuatorsContainer.innerHTML = 
+            "<p class=\"text-gray-600 dark:text-gray-400 text-center\">Nenhum atuador registrado.</p>";
+            return;
+        }
+        for (const actuatorId in actuators) {
+            const actuator = actuators[actuatorId];
+            const item = document.createElement("div");
+            item.className = "actuator-item bg-white dark:bg-gray-800 p-4 rounded shadow flex flex-col sm:flex-row justify-between items-center";
+            
+            let buttonsHtml = "";
+            if (userPrivilegio == 1) { // Only show buttons for admins
+                buttonsHtml = `
+                    <button onclick="sendDetailedCommand('${actuator.id}', 'ligar')" 
+                            class="actuator-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded text-sm transition-colors duration-150">
+                        Ligar
+                    </button>
+                    <button onclick="sendDetailedCommand('${actuator.id}', 'desligar')" 
+                            class="actuator-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 rounded text-sm transition-colors duration-150">
+                        Desligar
+                    </button>
+                `;
+            }
+            
+            item.innerHTML = `
+                <div>
+                    <span class="text-lg font-medium text-gray-700 dark:text-gray-200">${actuator.name} (${actuator.id})</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Tópico Comando: ${actuator.command_topic}</p>
+                    ${actuator.status_topic ? `<p class="text-xs text-gray-500 dark:text-gray-400">Tópico Status: ${actuator.status_topic}</p>` : ""}
+                </div>
+                <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+                    ${buttonsHtml}
+                    <span id="status-${actuator.id}" class="text-md font-semibold ${actuator.state && actuator.state.toLowerCase() === "ligado" ? "text-green-500" : "text-red-500"}">
+                        ${actuator.state || "Desconhecido"}
+                    </span>
+                </div>
+            `;
+            detailedActuatorsContainer.appendChild(item);
+        }
+    }
+
+    function renderDetailedCommandHistory(history) {
+        detailedCommandHistoryContainer.innerHTML = ""; // Clear previous
+        if (!history || history.length === 0) {
+            detailedCommandHistoryContainer.innerHTML = 
+            "<p class=\"text-gray-600 dark:text-gray-400 text-center\">Nenhum histórico de comandos disponível.</p>";
+            return;
+        }
+        let historyHtml = "<ul class=\"list-none p-0\">";
+        history.slice().reverse().forEach(item => { // Show newest first
+            historyHtml += `<li class="py-2 px-1 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <strong>${item.timestamp}</strong> - Usuário: ${item.user} <br>
+                                Atuador: ${item.actuator_name} - Comando: ${item.command} <br>
+                                <span class=\"text-xs text-gray-500 dark:text-gray-400\">Tópico: ${item.topic}, Payload: ${item.payload}</span>
+                           </li>`;
+        });
+        historyHtml += "</ul>";
+        detailedCommandHistoryContainer.innerHTML = historyHtml;
+    }
+
+    async function fetchAllDeviceData() {
+        try {
+            const response = await fetch("/api/device_data");
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const userPrivilegio = {{ privilegio | default(0) }}; // Get privilegio from Flask context
+            
+            renderDetailedSensors(data.sensors || {});
+            renderDetailedActuators(data.actuators || {}, userPrivilegio);
+            renderDetailedCommandHistory(data.command_history || []);
+
+        } catch (error) {
+            console.error("Erro ao buscar todos os dados dos dispositivos:", error);
+            if(detailedSensorLoadingStatus) detailedSensorLoadingStatus.textContent = "Erro ao carregar dados.";
+            if(detailedActuatorLoadingStatus) detailedActuatorLoadingStatus.textContent = "Erro ao carregar atuadores.";
+            detailedCommandHistoryContainer.innerHTML = 
+            "<p class=\"text-red-500 text-center\">Falha ao carregar histórico de comandos.</p>";
+        }
+    }
+
+    window.sendDetailedCommand = async function(actuatorId, command) {
+        try {
+            const response = await fetch("/api/actuator/command", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ actuator_id: actuatorId, command: command }),
+            });
+            
+            const result = await response.json();
+            if (response.ok && result.status === "success") {
+                console.log(`Comando '${command}' enviado para atuador ID '${actuatorId}' com sucesso.`);
+                // Update the specific actuator status immediately
+                const statusElement = document.getElementById(`status-${actuatorId}`);
+                if (statusElement) {
+                    statusElement.textContent = command === "ligar" ? "Ligado" : "Desligado";
+                    statusElement.className = `text-md font-semibold ${
+                        command === "ligar" ? "text-green-500" : "text-red-500"
+                    }`;
+                }
+                // Refresh all data after a short delay
+                setTimeout(fetchAllDeviceData, 1000);
+            } else {
+                alert(result.message || `Falha ao enviar comando para ${actuatorId}`);
+                throw new Error(result.message || `Falha ao enviar comando para ${actuatorId}`);
+            }
+        } catch (error) {
+            console.error("Erro ao enviar comando para atuador:", error);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        fetchAllDeviceData(); // Initial fetch
+        setInterval(fetchAllDeviceData, 5000); // Refresh data every 5 seconds
+    });
+</script>
+{% endblock %}
