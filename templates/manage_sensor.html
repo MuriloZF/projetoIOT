@@ -25,16 +25,15 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-                        {% for device_info in devices %}
+                        {% for topic, device in devices.items() %}
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-150">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ device_info.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device_info.topic }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device_info.value }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device_info.timestamp }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device_info.data_type if device_info.data_type else "N/A" }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ device.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device.topic }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device.value }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device.timestamp }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device.data_type }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
-                                    <form action="{{ url_for('sensor_main.delete_sensor', sensor_id=device_info.id) }}" method="post" onsubmit="return confirm('Tem certeza que deseja remover este sensor?');" class="inline">
-                                        <input type="hidden" name="sensor_id_to_delete" value="{{ device_info.id }}">
+                                    <form action="{{ url_for('sensor_main.delete_sensor', sensor_topic=device.topic) }}" method="post" onsubmit="return confirm('Tem certeza que deseja remover este sensor?');" class="inline">
                                         <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-150">Remover</button>
                                     </form>
                                 </td>

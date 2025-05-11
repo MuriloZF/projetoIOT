@@ -1,38 +1,65 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from models import db, Actuator  # Make sure you have this model defined
 
-actuator = Blueprint('actuator', __name__, template_folder="templates")
+actuator_main = Blueprint('actuator_main', __name__, template_folder="templates")
 
-actuators = {
-    "Mangueira de água" : "Desligado",
-    "Ventilador" : "Desligado"
-}
-
-@actuator.route("/register_actuator")
-def register_actuator():
+@actuator_main.route("/register", methods=["GET", "POST"])
+def register_actuator_page():
+    if request.method == "POST":
+        try:
+            # Get form data
+            name = request.form.get("actuator_name")
+            command_topic = request.form.get("mqtt_command_topic")
+            status_topic = request.form.get("mqtt_status_topic", None)
+            
+            # Create new actuator
+            new_actuator = Actuator(
+                name=name,
+                command_topic=command_topic,
+                status_topic=status_topic,
+                state="OFF"  # Default state
+            )
+            
+            # Add to database
+            db.session.add(new_actuator)
+            db.session.commit()
+            
+            flash("Atuador registrado com sucesso!", "success")
+            return redirect(url_for("actuator_main.manage_actuators"))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erro ao registrar atuador: {str(e)}", "error")
+    
     return render_template("register_actuator.html")
 
-@actuator.route("/create_actuator", methods=["POST"])
-def actuator_sensor():
-    global actuators
-    if request.method == "POST":
-        actuator = request.form["actuator"]
-        valor = request.form["valor"]
-    else:
-        actuator = request.args.get["actuator"]
-        valor = request.args.get["valor"]
-    actuators[actuator] = valor
-    return render_template("manage_actuator.html", device=actuators)
+@actuator_main.route("/manage")
+def manage_actuators():
+    devices = Actuator.query.order_by(Actuator.id.desc()).all()
+    return render_template("manage_actuators.html", devices=devices)
 
-@actuator.route("/manage_actuator")
-def manage_actuator():
-    return render_template("manage_actuator.html", device = actuators)
+@actuator_main.route("/delete/<int:actuator_id>", methods=["POST"])
+def delete_actuator(actuator_id):
+    try:
+        actuator = Actuator.query.get_or_404(actuator_id)
+        db.session.delete(actuator)
+        db.session.commit()
+        flash("Atuador removido com sucesso!", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao remover atuador: {str(e)}", "error")
+    
+    return redirect(url_for("actuator_main.manage_actuators"))
 
-@actuator.route("/del_actuator", methods=["GET", "POST"])
-def del_actuator():
-    global actuators
-    if request.method == "POST":
-        actuator = request.form["actuator"]
-    else:
-        actuator = request.args.get["actuator", None]
-    actuators.pop(actuator)
-    return render_template("manage_actuator.html", device=actuators)
+@actuator_main.route("/toggle/<int:actuator_id>", methods=["POST"])
+def toggle_actuator(actuator_id):
+    try:
+        actuator = Actuator.query.get_or_404(actuator_id)
+        actuator.state = "ON" if actuator.state == "OFF" else "OFF"
+        db.session.commit()
+        flash(f"Atuador {actuator.name} {actuator.state}!", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao alterar estado: {str(e)}", "error")
+    
+    return redirect(url_for("actuator_main.manage_actuators"))
