@@ -7,7 +7,6 @@ function showUpdateForm(user) {
 
 function closeModal() {
     document.getElementById("updateModal").style.display = "none";
-    // Reset fields when closing
     document.getElementById("field").value = "";
     document.getElementById("nomeField").style.display = "none";
     document.getElementById("senhaField").style.display = "none";
