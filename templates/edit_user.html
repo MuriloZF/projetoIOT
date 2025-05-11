@@ -1,0 +1,44 @@
+{% extends "baseAdmin.html" %}
+{% block title %} <title> Editar Usuário </title> {% endblock %}
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 md:p-8 max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">Editar Usuário</h1>
+        <form action="{{ url_for('user.edit_user_page', username=user.username) }}" method="post" class="space-y-6">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome de Usuário:</label>
+                <input type="text" id="username" name="username" value="{{ user.username }}" required 
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nova Senha:</label>
+                <input type="password" id="password" name="password" placeholder="Deixe em branco para manter a atual" 
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            <div>
+                <label for="privilege" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Privilégio:</label>
+                <select id="privilege" name="privilege" 
+                        class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+                    <option value="0" {% if user.type == 'user' %}selected{% endif %}>Usuário</option>
+                    <option value="1" {% if user.type == 'admin' %}selected{% endif %}>Administrador</option>
+                </select>
+            </div>
+            
+            {% if error %}
+                <div class="text-red-500 text-sm">{{ error }}</div>
+            {% endif %}
+            
+            <div class="flex justify-between">
+                <a href="{{ url_for('user.manage_user_page') }}" 
+                   class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150">
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-custom-red hover:bg-custom-red-darker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

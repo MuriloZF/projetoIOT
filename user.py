@@ -97,9 +97,56 @@ def delete_user(username):
     if session.get("privilegio") != 1:
         return redirect(url_for("user.login_page"))
     
-    if username in users_dict:
+    if username == session.get("user_id"):
+        flash("Você não pode remover a si mesmo", "error")
+    elif username in users_dict:
         users_dict.pop(username)
-    elif username in admins_dict and username != session.get("user_id"):
+    elif username in admins_dict:
         admins_dict.pop(username)
     
     return redirect(url_for("user.manage_user_page"))
+
+@user_bp.route("/edit/<username>", methods=["GET", "POST"])
+def edit_user_page(username):
+    if session.get("privilegio") != 1:
+        return redirect(url_for("user.login_page"))
+    
+    if request.method == "POST":
+        new_username = request.form.get("username")
+        new_password = request.form.get("password")
+        new_privilege = request.form.get("privilege", "0")
+        
+        if not new_username or not new_password:
+            return render_template("edit_user.html", 
+                                user={"username": username, "type": "admin" if username in admins_dict else "user"}, 
+                                error="Todos os campos são obrigatórios")
+        
+        # Check if username is being changed to one that already exists (excluding current user)
+        if (new_username != username and 
+            (new_username in users_dict or new_username in admins_dict)):
+            return render_template("edit_user.html", 
+                                user={"username": username, "type": "admin" if username in admins_dict else "user"}, 
+                                error=f"Usuário {new_username} já existe")
+        
+        # Remove from old dictionary
+        if username in users_dict:
+            users_dict.pop(username)
+        elif username in admins_dict:
+            admins_dict.pop(username)
+        
+        # Add to new dictionary based on privilege
+        if new_privilege == "1":
+            admins_dict[new_username] = new_password
+        else:
+            users_dict[new_username] = new_password
+        
+        # Update session if editing own account
+        if username == session.get("user_id"):
+            session["user_id"] = new_username
+        
+        return redirect(url_for("user.manage_user_page"))
+    
+    # GET request - show edit form
+    user_type = "admin" if username in admins_dict else "user"
+    return render_template("edit_user.html", 
+                         user={"username": username, "type": user_type})
