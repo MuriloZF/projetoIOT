@@ -1,10 +1,10 @@
-from flask import Flask, render_template, Blueprint, request, jsonify, redirect, url_for, session
+from flask import Flask,flash, render_template, Blueprint, request, jsonify, redirect, url_for, session
 import paho.mqtt.client as mqtt
 import threading
 import time
 import json
 import uuid
-
+from actuator import Blueprint as actuator_bp
 # Import the user blueprint and user/admin dictionaries from user.py
 from user import user_bp, users_dict, admins_dict
 
@@ -85,6 +85,9 @@ data_lock = threading.Lock()
 # --- MQTT Client Setup ---
 mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=MQTT_CLIENT_ID)
 
+
+
+
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
         print(f"✅ Connected to MQTT Broker: {MQTT_BROKER_HOST}")
@@ -155,35 +158,58 @@ def mqtt_thread_worker():
 
 threading.Thread(target=mqtt_thread_worker, daemon=True).start()
 
-# --- Sensor Management Blueprint ---
 sensor_bp_main = Blueprint("sensor_main", __name__, template_folder="templates", url_prefix="/sensor")
 
 @sensor_bp_main.route("/register", methods=["GET", "POST"])
 def register_sensor_page():
     if session.get("privilegio") != 1:
         return redirect(url_for("user.login_page"))
+    
     if request.method == "POST":
         sensor_name = request.form.get("name")
         sensor_topic = request.form.get("topic")
         sensor_type = request.form.get("type", "")
-        if sensor_name and sensor_topic:
+        
+        if not all([sensor_name, sensor_topic]):
+            flash("Nome e tópico do sensor são obrigatórios", "error")
+            return redirect(url_for("sensor_main.register_sensor_page"))
+        
+        with data_lock:
+            # Check if topic already exists
+            if any(s["topic"] == sensor_topic for s in devices["sensors"].values()):
+                flash("Já existe um sensor com este tópico MQTT", "error")
+                return redirect(url_for("sensor_main.register_sensor_page"))
+            
             sensor_id = f"sensor_{uuid.uuid4().hex[:6]}"
-            with data_lock:
-                devices["sensors"][sensor_id] = {
-                    "id": sensor_id, "name": sensor_name, "topic": sensor_topic,
-                    "value": "N/A", "timestamp": "-", "data_type": sensor_type, "is_default": False
-                }
-                mqtt_client.subscribe(sensor_topic)
-                print(f"🔔 Subscribed to new sensor topic: {sensor_topic} for {sensor_name}")
+            devices["sensors"][sensor_id] = {
+                "id": sensor_id,
+                "name": sensor_name,
+                "topic": sensor_topic,
+                "value": "N/A",
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "data_type": sensor_type,
+                "is_default": False
+            }
+            
+            # Subscribe to MQTT topic
+            mqtt_client.subscribe(sensor_topic)
+            print(f"🔔 Subscribed to new sensor topic: {sensor_topic}")
+            
+            flash(f"Sensor '{sensor_name}' registrado com sucesso!", "success")
             return redirect(url_for("sensor_main.manage_sensors_page"))
+    
     return render_template("register_sensor.html")
 
 @sensor_bp_main.route("/manage")
 def manage_sensors_page():
     if session.get("privilegio") != 1:
         return redirect(url_for("user.login_page"))
+    
     with data_lock:
-        sensors_list = [s for s in devices["sensors"].values()]
+        sensors_list = list(devices["sensors"].values())
+        # Sort by timestamp (newest first)
+        sensors_list.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    
     return render_template("manage_sensor.html", devices=sensors_list)
 
 @sensor_bp_main.route("/delete/<sensor_id>", methods=["POST"])
@@ -201,6 +227,35 @@ def delete_sensor(sensor_id):
         else:
             print(f"⚠️ Attempted to delete non-existent or default sensor: {sensor_id}")
     return redirect(url_for("sensor_main.manage_sensors_page"))
+@sensor_bp_main.route("/edit/<sensor_id>", methods=["GET", "POST"])
+def edit_sensor(sensor_id):
+    if session.get("privilegio") != 1:
+        flash("Acesso não autorizado", "error")
+        return redirect(url_for("user.login_page"))
+    
+    with data_lock:
+        sensor = devices["sensors"].get(sensor_id)
+        if not sensor:
+            flash("Sensor não encontrado!", "error")
+            return redirect(url_for("sensor_main.manage_sensors_page"))
+        
+        if request.method == "POST":
+            sensor_name = request.form.get("sensor_name", "").strip()
+            data_type = request.form.get("data_type", "").strip()
+            
+            if not sensor_name:
+                flash("Nome do sensor é obrigatório!", "error")
+                return render_template("edit_sensor.html", sensor=sensor)
+            
+            # Update sensor data
+            sensor["name"] = sensor_name
+            sensor["data_type"] = data_type
+            sensor["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            flash("Sensor atualizado com sucesso!", "success")
+            return redirect(url_for("sensor_main.manage_sensors_page"))
+    
+    return render_template("edit_sensor.html", sensor=sensor)
 
 app.register_blueprint(sensor_bp_main)
 
@@ -210,46 +265,156 @@ actuator_bp_main = Blueprint("actuator_main", __name__, template_folder="templat
 @actuator_bp_main.route("/register", methods=["GET", "POST"])
 def register_actuator_page():
     if session.get("privilegio") != 1:
+        flash("Acesso não autorizado", "error")
         return redirect(url_for("user.login_page"))
+    
     if request.method == "POST":
-        actuator_name = request.form.get("name")
-        cmd_topic = request.form.get("command_topic")
-        status_topic = request.form.get("status_topic", "")
-        if actuator_name and cmd_topic:
+        actuator_name = request.form.get("name", "").strip()
+        cmd_topic = request.form.get("command_topic", "").strip()
+        status_topic = request.form.get("status_topic", "").strip()
+        
+        if not actuator_name or not cmd_topic:
+            flash("Nome e tópico de comando são obrigatórios", "error")
+            return render_template("register_actuator.html")
+        
+        with data_lock:
+            # Check if command topic already exists
+            if any(a["command_topic"] == cmd_topic for a in devices["actuators"].values()):
+                flash("Já existe um atuador com este tópico de comando", "error")
+                return render_template("register_actuator.html")
+            
             actuator_id = f"actuator_{uuid.uuid4().hex[:6]}"
-            with data_lock:
-                devices["actuators"][actuator_id] = {
-                    "id": actuator_id, "name": actuator_name, "command_topic": cmd_topic,
-                    "status_topic": status_topic, "state": "Desligado", "is_default": False
-                }
-                if status_topic:
-                    mqtt_client.subscribe(status_topic)
-                    print(f"🔔 Subscribed to new actuator status topic: {status_topic} for {actuator_name}")
+            devices["actuators"][actuator_id] = {
+                "id": actuator_id,
+                "name": actuator_name,
+                "command_topic": cmd_topic,
+                "status_topic": status_topic,
+                "state": "Desligado",
+                "is_default": False,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            }
+            
+            # Subscribe to status topic if provided
+            if status_topic:
+                mqtt_client.subscribe(status_topic)
+                print(f"🔔 Subscribed to actuator status topic: {status_topic}")
+            
+            flash(f"Atuador '{actuator_name}' registrado com sucesso!", "success")
             return redirect(url_for("actuator_main.manage_actuators_page"))
+    
     return render_template("register_actuator.html")
 
 @actuator_bp_main.route("/manage")
 def manage_actuators_page():
     if session.get("privilegio") != 1:
+        flash("Acesso não autorizado", "error")
         return redirect(url_for("user.login_page"))
+    
     with data_lock:
-        actuators_list = [a for a in devices["actuators"].values()]
+        actuators_list = sorted(
+            devices["actuators"].values(),
+            key=lambda x: x.get("timestamp", ""),
+            reverse=True
+        )
+    
     return render_template("manage_actuator.html", devices=actuators_list)
+
+@actuator_bp_main.route("/edit/<actuator_id>", methods=["GET", "POST"])
+def edit_actuator_page(actuator_id):
+    if session.get("privilegio") != 1:
+        flash("Acesso não autorizado", "error")
+        return redirect(url_for("user.login_page"))
+    
+    with data_lock:
+        actuator = devices["actuators"].get(actuator_id)
+        if not actuator:
+            flash("Atuador não encontrado", "error")
+            return redirect(url_for("actuator_main.manage_actuators_page"))
+        
+        if request.method == "POST":
+            actuator_name = request.form.get("name", "").strip()
+            cmd_topic = request.form.get("command_topic", "").strip()
+            status_topic = request.form.get("status_topic", "").strip()
+            
+            if not actuator_name or not cmd_topic:
+                flash("Nome e tópico de comando são obrigatórios", "error")
+                return render_template("edit_actuator.html", actuator=actuator)
+            
+            # Unsubscribe from old status topic if it changed
+            if actuator["status_topic"] and actuator["status_topic"] != status_topic:
+                mqtt_client.unsubscribe(actuator["status_topic"])
+                print(f"🔕 Unsubscribed from old status topic: {actuator['status_topic']}")
+            
+            # Update actuator data
+            actuator["name"] = actuator_name
+            actuator["command_topic"] = cmd_topic
+            actuator["status_topic"] = status_topic
+            actuator["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Subscribe to new status topic if provided
+            if status_topic:
+                mqtt_client.subscribe(status_topic)
+                print(f"🔔 Subscribed to new status topic: {status_topic}")
+            
+            flash("Atuador atualizado com sucesso!", "success")
+            return redirect(url_for("actuator_main.manage_actuators_page"))
+    
+    return render_template("edit_actuator.html", actuator=actuator)
+
+@actuator_bp_main.route("/toggle/<actuator_id>", methods=["POST"])
+def toggle_actuator(actuator_id):
+    if session.get("privilegio") != 1:
+        return jsonify({"status": "error", "message": "Não autorizado"}), 403
+    
+    with data_lock:
+        actuator = devices["actuators"].get(actuator_id)
+        if not actuator:
+            return jsonify({"status": "error", "message": "Atuador não encontrado"}), 404
+        
+        new_state = "Ligado" if actuator["state"] == "Desligado" else "Desligado"
+        actuator["state"] = new_state
+        
+        # Send MQTT command (using ON/OFF for compatibility)
+        mqtt_state = "ON" if new_state == "Ligado" else "OFF"
+        mqtt_client.publish(actuator["command_topic"], mqtt_state)
+        
+        # Update timestamp
+        actuator["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        
+        return jsonify({
+            "status": "success",
+            "new_state": new_state,
+            "actuator_id": actuator_id
+        })
 
 @actuator_bp_main.route("/delete/<actuator_id>", methods=["POST"])
 def delete_actuator(actuator_id):
     if session.get("privilegio") != 1:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+        flash("Acesso não autorizado", "error")
+        return redirect(url_for("user.login_page"))
+    
     with data_lock:
-        if actuator_id in devices["actuators"] and not devices["actuators"][actuator_id].get("is_default", False):
-            status_topic_to_unsubscribe = devices["actuators"][actuator_id].get("status_topic")
-            if status_topic_to_unsubscribe:
-                mqtt_client.unsubscribe(status_topic_to_unsubscribe)
-                print(f"🔕 Unsubscribed from actuator status topic: {status_topic_to_unsubscribe}")
-            del devices["actuators"][actuator_id]
-            print(f"🗑️ Deleted actuator: {actuator_id}")
-        else:
-            print(f"⚠️ Attempted to delete non-existent or default actuator: {actuator_id}")
+        actuator = devices["actuators"].get(actuator_id)
+        if not actuator:
+            flash("Atuador não encontrado", "error")
+            return redirect(url_for("actuator_main.manage_actuators_page"))
+        
+        if actuator.get("is_default", False):
+            flash("Não é possível remover atuadores padrão", "error")
+            return redirect(url_for("actuator_main.manage_actuators_page"))
+        
+        # Unsubscribe from status topic if exists
+        if actuator["status_topic"]:
+            mqtt_client.unsubscribe(actuator["status_topic"])
+            print(f"🔕 Unsubscribed from status topic: {actuator['status_topic']}")
+        
+        # Remove actuator
+        actuator_name = actuator["name"]
+        del devices["actuators"][actuator_id]
+        
+        flash(f"Atuador '{actuator_name}' removido com sucesso", "success")
+        print(f"🗑️ Deleted actuator: {actuator_id}")
+    
     return redirect(url_for("actuator_main.manage_actuators_page"))
 
 app.register_blueprint(actuator_bp_main)

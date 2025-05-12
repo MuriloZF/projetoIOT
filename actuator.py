@@ -1,65 +1,139 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import db, Actuator  # Make sure you have this model defined
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+import uuid
+from threading import Lock
+import time
 
-actuator_main = Blueprint('actuator_main', __name__, template_folder="templates")
+actuator_bp = Blueprint("actuator_main", __name__, template_folder="templates", url_prefix="/actuator")
 
-@actuator_main.route("/register", methods=["GET", "POST"])
+@actuator_bp.route("/register", methods=["GET", "POST"])
 def register_actuator_page():
+    if session.get("privilegio") != 1:
+        return redirect(url_for("user.login_page"))
+    
     if request.method == "POST":
-        try:
-            # Get form data
-            name = request.form.get("actuator_name")
-            command_topic = request.form.get("mqtt_command_topic")
-            status_topic = request.form.get("mqtt_status_topic", None)
+        actuator_name = request.form.get("actuator_name")
+        command_topic = request.form.get("mqtt_command_topic")
+        status_topic = request.form.get("mqtt_status_topic", "")
+        
+        if not all([actuator_name, command_topic]):
+            flash("Nome e tópico de comando são obrigatórios", "error")
+            return render_template("register_actuator.html")
+        
+        with data_lock:
+            # Check if command topic already exists
+            if any(a["command_topic"] == command_topic for a in devices["actuators"].values()):
+                flash("Já existe um atuador com este tópico de comando", "error")
+                return render_template("register_actuator.html")
             
-            # Create new actuator
-            new_actuator = Actuator(
-                name=name,
-                command_topic=command_topic,
-                status_topic=status_topic,
-                state="OFF"  # Default state
-            )
+            actuator_id = f"actuator_{uuid.uuid4().hex[:6]}"
+            devices["actuators"][actuator_id] = {
+                "id": actuator_id,
+                "name": actuator_name,
+                "command_topic": command_topic,
+                "status_topic": status_topic,
+                "state": "OFF",
+                "is_default": False
+            }
             
-            # Add to database
-            db.session.add(new_actuator)
-            db.session.commit()
+            # Subscribe to status topic if provided
+            if status_topic:
+                mqtt_client.subscribe(status_topic)
             
-            flash("Atuador registrado com sucesso!", "success")
-            return redirect(url_for("actuator_main.manage_actuators"))
-            
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Erro ao registrar atuador: {str(e)}", "error")
+            flash(f"Atuador '{actuator_name}' registrado com sucesso!", "success")
+            return redirect(url_for("actuator_main.manage_actuators_page"))
     
     return render_template("register_actuator.html")
 
-@actuator_main.route("/manage")
-def manage_actuators():
-    devices = Actuator.query.order_by(Actuator.id.desc()).all()
-    return render_template("manage_actuators.html", devices=devices)
-
-@actuator_main.route("/delete/<int:actuator_id>", methods=["POST"])
-def delete_actuator(actuator_id):
-    try:
-        actuator = Actuator.query.get_or_404(actuator_id)
-        db.session.delete(actuator)
-        db.session.commit()
-        flash("Atuador removido com sucesso!", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Erro ao remover atuador: {str(e)}", "error")
+@actuator_bp.route("/manage")
+def manage_actuators_page():
+    if session.get("privilegio") != 1:
+        return redirect(url_for("user.login_page"))
     
-    return redirect(url_for("actuator_main.manage_actuators"))
+    with data_lock:
+        actuators_list = list(devices["actuators"].values())
+    
+    return render_template("manage_actuator.html", devices=actuators_list)
 
-@actuator_main.route("/toggle/<int:actuator_id>", methods=["POST"])
+@actuator_bp.route("/edit/<actuator_id>", methods=["GET", "POST"])
+def edit_actuator_page(actuator_id):
+    if session.get("privilegio") != 1:
+        return redirect(url_for("user.login_page"))
+    
+    with data_lock:
+        actuator = devices["actuators"].get(actuator_id)
+        if not actuator:
+            flash("Atuador não encontrado", "error")
+            return redirect(url_for("actuator_main.manage_actuators_page"))
+        
+        if request.method == "POST":
+            actuator_name = request.form.get("actuator_name")
+            command_topic = request.form.get("mqtt_command_topic")
+            status_topic = request.form.get("mqtt_status_topic", "")
+            
+            if not all([actuator_name, command_topic]):
+                flash("Nome e tópico de comando são obrigatórios", "error")
+                return render_template("edit_actuator.html", actuator=actuator)
+            
+            # Unsubscribe from old status topic if it changed
+            if actuator["status_topic"] and actuator["status_topic"] != status_topic:
+                mqtt_client.unsubscribe(actuator["status_topic"])
+            
+            # Update actuator data
+            actuator["name"] = actuator_name
+            actuator["command_topic"] = command_topic
+            actuator["status_topic"] = status_topic
+            
+            # Subscribe to new status topic if provided
+            if status_topic:
+                mqtt_client.subscribe(status_topic)
+            
+            flash("Atuador atualizado com sucesso!", "success")
+            return redirect(url_for("actuator_main.manage_actuators_page"))
+    
+    return render_template("edit_actuator.html", actuator=actuator)
+
+@actuator_bp.route("/toggle/<actuator_id>", methods=["POST"])
 def toggle_actuator(actuator_id):
-    try:
-        actuator = Actuator.query.get_or_404(actuator_id)
-        actuator.state = "ON" if actuator.state == "OFF" else "OFF"
-        db.session.commit()
-        flash(f"Atuador {actuator.name} {actuator.state}!", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Erro ao alterar estado: {str(e)}", "error")
+    if session.get("privilegio") != 1:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
     
-    return redirect(url_for("actuator_main.manage_actuators"))
+    with data_lock:
+        actuator = devices["actuators"].get(actuator_id)
+        if not actuator:
+            return jsonify({"status": "error", "message": "Actuator not found"}), 404
+        
+        new_state = "ON" if actuator["state"] == "OFF" else "OFF"
+        actuator["state"] = new_state
+        
+        # Send MQTT command
+        mqtt_client.publish(actuator["command_topic"], new_state)
+        
+        return jsonify({
+            "status": "success",
+            "new_state": new_state,
+            "actuator_id": actuator_id
+        })
+
+@actuator_bp.route("/delete/<actuator_id>", methods=["POST"])
+def delete_actuator(actuator_id):
+    if session.get("privilegio") != 1:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+    
+    with data_lock:
+        actuator = devices["actuators"].get(actuator_id)
+        if not actuator:
+            flash("Atuador não encontrado", "error")
+            return redirect(url_for("actuator_main.manage_actuators_page"))
+        
+        if actuator.get("is_default", False):
+            flash("Não é possível remover atuadores padrão", "error")
+            return redirect(url_for("actuator_main.manage_actuators_page"))
+        
+        # Unsubscribe from topics
+        if actuator["status_topic"]:
+            mqtt_client.unsubscribe(actuator["status_topic"])
+        
+        del devices["actuators"][actuator_id]
+        flash(f"Atuador '{actuator['name']}' removido com sucesso", "success")
+    
+    return redirect(url_for("actuator_main.manage_actuators_page"))

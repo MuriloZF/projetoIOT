@@ -1,0 +1,50 @@
+{% extends "baseAdmin.html" %}
+{% block title %} <title>Editar Sensor</title> {% endblock %}
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 md:p-8 max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">Editar Sensor</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-md {% if category == 'success' %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100{% else %}bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form action="{{ url_for('sensor_main.edit_sensor', sensor_id=sensor.id) }}" method="post" class="space-y-6">
+            <div>
+                <label for="sensor_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome do Sensor*</label>
+                <input type="text" id="sensor_name" name="sensor_name" value="{{ sensor.name }}" required
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tópico MQTT</label>
+                <div class="mt-1 block w-full px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm sm:text-sm text-gray-500 dark:text-gray-300">
+                    {{ sensor.topic }}
+                </div>
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">O tópico MQTT não pode ser alterado</p>
+            </div>
+            <div>
+                <label for="data_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Dado</label>
+                <input type="text" id="data_type" name="data_type" value="{{ sensor.data_type }}"
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            
+            <div class="flex justify-between">
+                <a href="{{ url_for('sensor_main.manage_sensors_page') }}" 
+                   class="py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150">
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

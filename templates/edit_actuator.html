@@ -1,0 +1,48 @@
+{% extends "baseAdmin.html" %}
+{% block title %} <title>Editar Atuador</title> {% endblock %}
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 md:p-8 max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">Editar Atuador</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-md {% if category == 'success' %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100{% else %}bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form action="{{ url_for('actuator_main.edit_actuator_page', actuator_id=actuator.id) }}" method="post" class="space-y-6">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome do Atuador*</label>
+                <input type="text" id="name" name="name" value="{{ actuator.name }}" required
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            <div>
+                <label for="command_topic" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tópico de Comando MQTT*</label>
+                <input type="text" id="command_topic" name="command_topic" value="{{ actuator.command_topic }}" required
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            <div>
+                <label for="status_topic" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tópico de Status MQTT (Opcional)</label>
+                <input type="text" id="status_topic" name="status_topic" value="{{ actuator.status_topic if actuator.status_topic else '' }}"
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            
+            <div class="flex justify-between">
+                <a href="{{ url_for('actuator_main.manage_actuators_page') }}" 
+                   class="py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150">
+                    Cancelar
+                </a>
+                <button type="submit" 
+                        class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
