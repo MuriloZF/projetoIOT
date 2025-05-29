@@ -127,6 +127,54 @@ def actuator_raw_command():
             })
         else:
             return jsonify({"status": "error", "message": "Actuator not found"}), 404
+        
+@app.route("/api/actuator/command", methods=["POST"])
+def actuator_command():
+    if "user_id" not in session or session.get("privilegio") != 1:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    data = request.get_json()
+    actuator_id = data.get("actuator_id")
+    command = data.get("command", "").lower()
+
+    if not actuator_id or command not in ["ligar", "desligar"]:
+        return jsonify({"status": "error", "message": "Invalid request"}), 400
+
+    with data_lock:
+        target_actuator = None
+        for act_key, act_info in devices["actuators"].items():
+            if act_info["id"] == actuator_id:
+                target_actuator = act_info
+                break
+
+        if target_actuator and target_actuator.get("command_topic"):
+            mqtt_payload = "ON" if command == "ligar" else "OFF"
+            mqtt_client.publish(target_actuator["command_topic"], mqtt_payload)
+
+            new_state = "Ligado" if command == "ligar" else "Desligado"
+            target_actuator["state"] = new_state
+
+            log_entry = {
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "user": session.get("user_id", "Unknown"),
+                "actuator_name": target_actuator.get("name", actuator_id),
+                "command": new_state,
+                "topic": target_actuator["command_topic"],
+                "payload": mqtt_payload
+            }
+            command_history.append(log_entry)
+            if len(command_history) > 50:
+                command_history.pop(0)
+
+            print(f"✅ Comando '{command}' enviado para {target_actuator['name']}")
+            return jsonify({
+                "status": "success",
+                "message": f"Comando '{command}' enviado",
+                "new_state": new_state
+            })
+        else:
+            return jsonify({"status": "error", "message": "Actuator not found"}), 404
+
 
 # --- Error Handlers ---
 @app.errorhandler(404)
