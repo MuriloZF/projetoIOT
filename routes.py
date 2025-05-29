@@ -1,29 +1,11 @@
-from flask import Flask,flash, render_template, Blueprint, request, jsonify, redirect, url_for, session
-
-from shared import mqtt_client, devices, command_history, data_lock, MQTT_BROKER_HOST, MQTT_BROKER_PORT, mqtt_thread_worker
-
+from flask import Blueprint, render_template, session, redirect, url_for, jsonify, request
+from shared import devices, data_lock, command_history
 import time
-import threading
-# Import the user blueprint and user/admin dictionaries from user.py
-from user import user_bp
-from sensor import sensor_main
-from actuator import actuator_main
 
-app = Flask(__name__)
-app.secret_key = "supersecretkey_for_iot_project"
+main_bp = Blueprint("main", __name__)
 
-# Register the user blueprint
-app.register_blueprint(user_bp, url_prefix="/user")
-app.register_blueprint(sensor_main, url_prefix="/sensor")
-app.register_blueprint(actuator_main, url_prefix="/actuator")
-
-#///////////////////////////////////////////
-
-threading.Thread(target=mqtt_thread_worker, daemon=True).start()
-
-# --- Main Routes (Dashboard, etc.) ---
-@app.route("/")
-@app.route("/home")
+@main_bp.route("/")
+@main_bp.route("/home")
 def home_page_dashboard():
     if "user_id" not in session:
         return redirect(url_for("user.login_page"))
@@ -51,7 +33,7 @@ def home_page_dashboard():
                          all_sensors=all_sensors,
                          command_history=command_history[-10:])
 
-@app.route("/dashboard")
+@main_bp.route("/dashboard")
 def detailed_dashboard_page():
     if "user_id" not in session:
         return redirect(url_for("user.login_page"))
@@ -67,8 +49,7 @@ def detailed_dashboard_page():
                          umidade=devices["sensors"].get("humidity_default", {}).get("value", "N/A"),
                          command_history=command_history[-10:])
 
-# --- API Endpoints ---
-@app.route("/api/device_data")
+@main_bp.route("/api/device_data")
 def get_device_data():
     if "user_id" not in session:
         return jsonify({"status": "error", "message": "Unauthorized"}), 401
@@ -79,7 +60,7 @@ def get_device_data():
             "command_history": command_history[-10:]
         })
 
-@app.route("/api/actuator/raw_command", methods=["POST"])
+@main_bp.route("/api/actuator/raw_command", methods=["POST"])
 def actuator_raw_command():
     if "user_id" not in session or session.get("privilegio") != 1:
         return jsonify({"status": "error", "message": "Unauthorized"}), 403
@@ -128,23 +109,20 @@ def actuator_raw_command():
         else:
             return jsonify({"status": "error", "message": "Actuator not found"}), 404
 
-# --- Error Handlers ---
-@app.errorhandler(404)
+# Error handlers
+
+@main_bp.app_errorhandler(404)
 def page_not_found(e):
     return render_template("errors/404.html"), 404
 
-@app.errorhandler(500)
+@main_bp.app_errorhandler(500)
 def internal_server_error(e):
     return render_template("errors/500.html"), 500
 
-@app.errorhandler(401)
+@main_bp.app_errorhandler(401)
 def unauthorized_error(e):
     return render_template("errors/401.html"), 401
 
-@app.errorhandler(403)
+@main_bp.app_errorhandler(403)
 def forbidden_error(e):
     return render_template("errors/403.html"), 403
-
-if __name__ == "__main__":
-    print("🌐 Starting IoT Dashboard...")
-    app.run(host="0.0.0.0", port=5000, debug=True)
