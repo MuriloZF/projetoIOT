@@ -1,13 +1,14 @@
 from flask import Flask,flash, render_template, Blueprint, request, jsonify, redirect, url_for, session
 
-from shared import mqtt_client, devices, command_history, data_lock, MQTT_BROKER_HOST, MQTT_BROKER_PORT, mqtt_thread_worker
+from controllers.shared import mqtt_client, devices, command_history, data_lock, MQTT_BROKER_HOST, MQTT_BROKER_PORT, mqtt_thread_worker
 
 import time
 import threading
 # Import the user blueprint and user/admin dictionaries from user.py
-from user import user_bp
-from sensor import sensor_main
-from actuator import actuator_main
+from controllers.user import user_bp
+from controllers.sensor import sensor_main
+from controllers.actuator import actuator_main
+
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey_for_iot_project"
@@ -17,7 +18,6 @@ app.register_blueprint(user_bp, url_prefix="/user")
 app.register_blueprint(sensor_main, url_prefix="/sensor")
 app.register_blueprint(actuator_main, url_prefix="/actuator")
 
-#///////////////////////////////////////////
 
 threading.Thread(target=mqtt_thread_worker, daemon=True).start()
 

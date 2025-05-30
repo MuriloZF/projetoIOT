@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
-from shared import devices, data_lock, mqtt_client
+from controllers.shared import devices, data_lock, mqtt_client
 import uuid
 import time
 import paho.mqtt.client as mqtt
