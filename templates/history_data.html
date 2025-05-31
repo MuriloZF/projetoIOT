@@ -1,0 +1,44 @@
+{% extends base_template %}
+
+{% block title %}  Histórico de Dados  {% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+        <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">Painel de Controle Detalhado</h2>
+
+        <!-- Histórico de Comandos -->
+        <div id="commandHistorySection" class="history-display bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow">
+            <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Histórico de Comandos</h3>
+            <div id="detailed-command-history-container" class="max-h-96 overflow-y-auto space-y-2 text-sm">
+                <p class="text-gray-600 dark:text-gray-400 text-center">Nenhum histórico de comandos disponível.</p>
+                {# Command history will be populated by JavaScript #}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const detailedCommandHistoryContainer = document.getElementById("detailed-command-history-container");
+
+    function renderDetailedCommandHistory(history) {
+        detailedCommandHistoryContainer.innerHTML = ""; // Clear previous
+        if (!history || history.length === 0) {
+            detailedCommandHistoryContainer.innerHTML = 
+            "<p class=\"text-gray-600 dark:text-gray-400 text-center\">Nenhum histórico de comandos disponível.</p>";
+            return;
+        }
+        let historyHtml = "<ul class=\"list-none p-0\">";
+        history.slice().reverse().forEach(item => { // Show newest first
+            historyHtml += `<li class="py-2 px-1 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <strong>${item.timestamp}</strong> - Usuário: ${item.user} <br>
+                                Atuador: ${item.actuator_name} - Comando: ${item.command} <br>
+                                <span class=\"text-xs text-gray-500 dark:text-gray-400\">Tópico: ${item.topic}, Payload: ${item.payload}</span>
+                           </li>`;
+        });
+        historyHtml += "</ul>";
+        detailedCommandHistoryContainer.innerHTML = historyHtml;
+    }
+
+</script>
+{% endblock %}
