@@ -8,9 +8,13 @@ import threading
 from controllers.user import user_bp
 from controllers.sensor import sensor_main
 from controllers.actuator import actuator_main
+from models.user.user import User
+from models.db import db
 
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///term_control.db"
+db.init_app(app)
 app.secret_key = "supersecretkey_for_iot_project"
 
 # Register the user blueprint
@@ -195,4 +199,6 @@ def forbidden_error(e):
 
 if __name__ == "__main__":
     print("🌐 Starting IoT Dashboard...")
+    with app.app_context():
+        db.create_all()
     app.run(host="0.0.0.0", port=5000, debug=True)
