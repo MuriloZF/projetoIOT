@@ -13,7 +13,9 @@ from models.db import db
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///term_control.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://termcon:termcon@localhost:3306/term_control"
+
+
 db.init_app(app)
 app.secret_key = "supersecretkey_for_iot_project"
 
@@ -25,12 +27,21 @@ app.register_blueprint(actuator_main, url_prefix="/actuator")
 
 threading.Thread(target=mqtt_thread_worker, daemon=True).start()
 
+@app.before_request
+def verificar_autenticacao():
+    rotas_livres = [
+        "user.login_page",
+        "user.register_user_page",
+        "user.login",
+        "static"
+    ]
+    if request.endpoint not in rotas_livres and not session.get("user_id"):
+        return redirect(url_for("user.login_page"))
+
 # --- Main Routes (Dashboard, etc.) ---
 @app.route("/")
 @app.route("/home")
 def home_page_dashboard():
-    if "user_id" not in session:
-        return redirect(url_for("user.login_page"))
     with data_lock:
         temp_sensor = devices["sensors"].get("temperature_default", {})
         hum_sensor = devices["sensors"].get("humidity_default", {})
@@ -40,10 +51,10 @@ def home_page_dashboard():
         all_actuators = list(devices["actuators"].values())
         all_sensors = list(devices["sensors"].values())
     
-    privilegio = session.get("privilegio", 0)
+    role = session.get("role", "user")
     
     return render_template("home.html",
-                         privilegio=privilegio,
+                         role=role,
                          temperatura=temp_sensor.get("value", "N/A"),
                          timestamp_temp=temp_sensor.get("timestamp", "-"),
                          umidade=hum_sensor.get("value", "N/A"),
@@ -57,14 +68,20 @@ def home_page_dashboard():
 
 @app.route("/dashboard")
 def detailed_dashboard_page():
-    if "user_id" not in session:
-        return redirect(url_for("user.login_page"))
     with data_lock:
         all_actuators = list(devices["actuators"].values())
         all_sensors = list(devices["sensors"].values())
-    privilegio = session.get("privilegio", 0)
+
+    role = session.get("role", "user")
+
+    if role == "admin":
+        base_template = "baseAdmin.html"
+    else:
+        base_template = "baseUser.html"
+
     return render_template("dashboard.html",
-                         privilegio=privilegio,
+                         role=role,
+                         base_template=base_template,
                          all_actuators=all_actuators,
                          all_sensors=all_sensors,
                          temperatura=devices["sensors"].get("temperature_default", {}).get("value", "N/A"),
@@ -74,8 +91,6 @@ def detailed_dashboard_page():
 # --- API Endpoints ---
 @app.route("/api/device_data")
 def get_device_data():
-    if "user_id" not in session:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 401
     with data_lock:
         return jsonify({
             "sensors": devices["sensors"],
@@ -85,9 +100,6 @@ def get_device_data():
 
 @app.route("/api/actuator/raw_command", methods=["POST"])
 def actuator_raw_command():
-    if "user_id" not in session or session.get("privilegio") != 1:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 403
-        
     data = request.get_json()
     actuator_id = data.get("actuator_id")
     raw_command = data.get("raw_command", "").upper()
@@ -134,9 +146,6 @@ def actuator_raw_command():
         
 @app.route("/api/actuator/command", methods=["POST"])
 def actuator_command():
-    if "user_id" not in session or session.get("privilegio") != 1:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 403
-
     data = request.get_json()
     actuator_id = data.get("actuator_id")
     command = data.get("command", "").lower()

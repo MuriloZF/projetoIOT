@@ -1,4 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
+from models.user.user import User
+from models.db import db
+from functools import wraps
 
 user_bp = Blueprint("user", __name__, template_folder="templates")
 
@@ -14,6 +17,15 @@ admins_dict = {
     "admin3": "1234"
 }
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") != "admin":
+            flash("Acesso não autorizado", "error")
+            return redirect(url_for("user.login_page"))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @user_bp.route("/")
 def index_redirect_to_login():
     return redirect(url_for("user.login_page"))
@@ -24,13 +36,12 @@ def login_page():
         username = request.form.get("username")
         password = request.form.get("password")
         
-        if username in admins_dict and admins_dict[username] == password:
-            session["privilegio"] = 1
-            session["user_id"] = username
-            return redirect(url_for("home_page_dashboard"))
-        elif username in users_dict and users_dict[username] == password:
-            session["privilegio"] = 0
-            session["user_id"] = username
+        user = User.query.filter_by(username=username, password=password).first()
+
+        if user:
+            print(f"Usuário logado: {user.username}, role: {user.role}")
+            session["user_id"] = user.username
+            session["role"] = user.role
             return redirect(url_for("home_page_dashboard"))
         else:
             return render_template("login.html", error="Credenciais inválidas")
@@ -42,36 +53,25 @@ def logout():
     session.clear()
     return redirect(url_for("user.login_page"))
 
+@admin_required
 @user_bp.route("/register", methods=["GET", "POST"])
 def register_user_page():
-    if session.get("privilegio") != 1:
-        return redirect(url_for("user.login_page"))
     
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        privilege = request.form.get("privilege", "0")
-        
-        if not username or not password:
-            return render_template("register_user.html", error="Todos os campos são obrigatórios")
-        
-        if username in users_dict or username in admins_dict:
-            return render_template("register_user.html", error=f"Usuário {username} já existe")
-        
-        if privilege == "1":
-            admins_dict[username] = password
-        else:
-            users_dict[username] = password
+        username = request.form["username"]
+        password = request.form["password"]
+
+        new_user = User(username=username, password=password, role="user")
+        db.session.add(new_user)
+        db.session.commit()
         
         return redirect(url_for("user.manage_user_page"))
     
     return render_template("register_user.html")
 
+@admin_required
 @user_bp.route("/manage")
 def manage_user_page():
-    if session.get("privilegio") != 1:
-        return redirect(url_for("user.login_page"))
-    
     # Combine both dictionaries with type information
     all_users = []
     for username, password in users_dict.items():
@@ -92,11 +92,9 @@ def manage_user_page():
     
     return render_template("manage_user.html", users=all_users)
 
+@admin_required
 @user_bp.route("/delete/<username>", methods=["POST"])
-def delete_user(username):
-    if session.get("privilegio") != 1:
-        return redirect(url_for("user.login_page"))
-    
+def delete_user(username): 
     if username == session.get("user_id"):
         flash("Você não pode remover a si mesmo", "error")
     elif username in users_dict:
@@ -106,11 +104,9 @@ def delete_user(username):
     
     return redirect(url_for("user.manage_user_page"))
 
+@admin_required
 @user_bp.route("/edit/<username>", methods=["GET", "POST"])
-def edit_user_page(username):
-    if session.get("privilegio") != 1:
-        return redirect(url_for("user.login_page"))
-    
+def edit_user_page(username):    
     if request.method == "POST":
         new_username = request.form.get("username")
         new_password = request.form.get("password")

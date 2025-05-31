@@ -3,14 +3,22 @@ from controllers.shared import devices, data_lock, mqtt_client
 import uuid
 import time
 import paho.mqtt.client as mqtt
+from functools import wraps
 
 actuator_main = Blueprint('actuator_main', __name__, template_folder="templates")
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") != "admin":
+            flash("Acesso não autorizado", "error")
+            return redirect(url_for("user.login_page"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+admin_required
 @actuator_main.route("/register", methods=["GET", "POST"])
 def register_actuator_page():
-    if session.get("privilegio") != 1:
-        flash("Acesso não autorizado", "error")
-        return redirect(url_for("user.login_page"))
     
     if request.method == "POST":
         actuator_name = request.form.get("name", "").strip()
@@ -48,11 +56,9 @@ def register_actuator_page():
     
     return render_template("register_actuator.html")
 
+admin_required
 @actuator_main.route("/manage")
 def manage_actuators_page():
-    if session.get("privilegio") != 1:
-        flash("Acesso não autorizado", "error")
-        return redirect(url_for("user.login_page"))
     
     with data_lock:
         actuators_list = sorted(
@@ -63,11 +69,9 @@ def manage_actuators_page():
     
     return render_template("manage_actuator.html", devices=actuators_list)
 
+admin_required
 @actuator_main.route("/edit/<actuator_id>", methods=["GET", "POST"])
 def edit_actuator_page(actuator_id):
-    if session.get("privilegio") != 1:
-        flash("Acesso não autorizado", "error")
-        return redirect(url_for("user.login_page"))
     
     with data_lock:
         actuator = devices["actuators"].get(actuator_id)
@@ -105,10 +109,9 @@ def edit_actuator_page(actuator_id):
     
     return render_template("edit_actuator.html", actuator=actuator)
 
+admin_required
 @actuator_main.route("/toggle/<actuator_id>", methods=["POST"])
 def toggle_actuator(actuator_id):
-    if session.get("privilegio") != 1:
-        return jsonify({"status": "error", "message": "Não autorizado"}), 403
     
     with data_lock:
         actuator = devices["actuators"].get(actuator_id)
@@ -131,11 +134,9 @@ def toggle_actuator(actuator_id):
             "actuator_id": actuator_id
         })
 
+admin_required
 @actuator_main.route("/delete/<actuator_id>", methods=["POST"])
 def delete_actuator(actuator_id):
-    if session.get("privilegio") != 1:
-        flash("Acesso não autorizado", "error")
-        return redirect(url_for("user.login_page"))
     
     with data_lock:
         actuator = devices["actuators"].get(actuator_id)

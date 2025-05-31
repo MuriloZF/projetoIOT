@@ -1,4 +1,4 @@
-{% if privilegio == 1 %}
+{% if role == "admin" %}
     {% extends "baseAdmin.html" %}
 {% else %}
     {% extends "baseUser.html" %}    
@@ -48,7 +48,7 @@
             <p id="actuator_valve_default-status" class="text-3xl font-bold {% if mangueira_status == 'Ligado' %}text-green-500 dark:text-green-400{% else %}text-red-500 dark:text-red-400{% endif %}">
                 {{ mangueira_status | default("Desconhecido") }}
             </p>
-            {% if privilegio == 1 %}
+            {% if role == "admin" %}
             <div class="flex justify-center space-x-2 mt-3">
                 <button onclick="sendRawCommand('actuator_valve_default', 'ON')" 
                         class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-150">
@@ -75,7 +75,7 @@
             <p id="actuator_vent_default-status" class="text-3xl font-bold {% if ventilador_status == 'Ligado' %}text-green-500 dark:text-green-400{% else %}text-red-500 dark:text-red-400{% endif %}">
                 {{ ventilador_status | default("Desconhecido") }}
             </p>
-            {% if privilegio == 1 %}
+            {% if role == "admin" %}
             <div class="flex justify-center space-x-2 mt-3">
                 <button onclick="sendRawCommand('actuator_vent_default', 'ON')" 
                         class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-150">
@@ -101,7 +101,7 @@
             <p id="actuator_heater_default-status" class="text-3xl font-bold {% if aquecedor_status == 'Ligado' %}text-green-500 dark:text-green-400{% else %}text-red-500 dark:text-red-400{% endif %}">
                 {{ aquecedor_status | default("Desconhecido") }}
             </p>
-            {% if privilegio == 1 %}
+            {% if role == "admin" %}
             <div class="flex justify-center space-x-2 mt-3">
                 <button onclick="sendRawCommand('actuator_heater_default', 'ON')" 
                         class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-150">
@@ -115,7 +115,7 @@
             {% endif %}
         </div>
 
-        {% if privilegio == 1 %}
+        {% if role == "admin" %}
         <!-- User Management Card (Admin Only) -->
         <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 text-center hover:shadow-xl transition-shadow duration-300">
             <div class="flex justify-center items-center mb-4">
@@ -131,7 +131,7 @@
     </div>
 
     <div class="mt-12 text-center">
-        {% if privilegio == 1 %}
+        {% if role == "admin" %}
         <p class="text-lg text-gray-700 dark:text-gray-300">Como administrador, você tem acesso a todas as funcionalidades de gerenciamento.</p>
         <a href="{{ url_for('detailed_dashboard_page') }}" class="mt-4 inline-block bg-custom-red hover:bg-custom-red-darker text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-150 text-lg">
             Acessar Controle Detalhado e Histórico

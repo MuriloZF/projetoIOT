@@ -1,8 +1,4 @@
-{% if privilegio == 1 %}
-    {% extends "baseAdmin.html" %}
-{% else %}
-    {% extends "baseUser.html" %}    
-{% endif %}
+{% extends base_template %}
 
 {% block title %} <title> Dashboard Detalhado - IoT </title> {% endblock %}
 
@@ -69,7 +65,7 @@
         }
     }
 
-    function renderDetailedActuators(actuators, userPrivilegio) {
+    function renderDetailedActuators(actuators, userRole) {
         if (detailedActuatorLoadingStatus) detailedActuatorLoadingStatus.style.display = "none";
         detailedActuatorsContainer.innerHTML = ""; // Clear previous
         if (Object.keys(actuators).length === 0) {
@@ -83,7 +79,7 @@
             item.className = "actuator-item bg-white dark:bg-gray-800 p-4 rounded shadow flex flex-col sm:flex-row justify-between items-center";
             
             let buttonsHtml = "";
-            if (userPrivilegio == 1) { // Only show buttons for admins
+            if (userRole === "admin") { // Only show buttons for admins
                 buttonsHtml = `
                     <button onclick="sendDetailedCommand('${actuator.id}', 'ligar')" 
                             class="actuator-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded text-sm transition-colors duration-150">
@@ -139,10 +135,10 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            const userPrivilegio = {{ privilegio | default(0) }}; // Get privilegio from Flask context
+            const userRole = "{{ role | default('role') }}"; // Get privilegio from Flask context
             
             renderDetailedSensors(data.sensors || {});
-            renderDetailedActuators(data.actuators || {}, userPrivilegio);
+            renderDetailedActuators(data.actuators || {}, userRole);
             renderDetailedCommandHistory(data.command_history || []);
 
         } catch (error) {

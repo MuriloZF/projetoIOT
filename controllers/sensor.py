@@ -3,13 +3,22 @@ from controllers.shared import devices, data_lock, mqtt_client
 import uuid
 import time
 import paho.mqtt.client as mqtt
+from functools import wraps
 
 sensor_main = Blueprint('sensor_main', __name__, template_folder="templates")
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") != "admin":
+            flash("Acesso não autorizado", "error")
+            return redirect(url_for("user.login_page"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@admin_required
 @sensor_main.route("/register", methods=["GET", "POST"])
 def register_sensor_page():
-    if session.get("privilegio") != 1:
-        return redirect(url_for("user.login_page"))
     
     if request.method == "POST":
         sensor_name = request.form.get("name")
@@ -46,10 +55,9 @@ def register_sensor_page():
     
     return render_template("register_sensor.html")
 
+@admin_required
 @sensor_main.route("/manage")
 def manage_sensors_page():
-    if session.get("privilegio") != 1:
-        return redirect(url_for("user.login_page"))
     
     with data_lock:
         sensors_list = list(devices["sensors"].values())
@@ -58,10 +66,9 @@ def manage_sensors_page():
     
     return render_template("manage_sensor.html", devices=sensors_list)
 
+@admin_required
 @sensor_main.route("/delete/<sensor_id>", methods=["POST"])
 def delete_sensor(sensor_id):
-    if session.get("privilegio") != 1:
-        return jsonify({"status": "error", "message": "Unauthorized"}), 403
     with data_lock:
         if sensor_id in devices["sensors"] and not devices["sensors"][sensor_id].get("is_default", False):
             topic_to_unsubscribe = devices["sensors"][sensor_id].get("topic")
@@ -74,11 +81,9 @@ def delete_sensor(sensor_id):
             print(f"⚠️ Attempted to delete non-existent or default sensor: {sensor_id}")
     return redirect(url_for("sensor_main.manage_sensors_page"))
 
+@admin_required
 @sensor_main.route("/edit/<sensor_id>", methods=["GET", "POST"])
 def edit_sensor(sensor_id):
-    if session.get("privilegio") != 1:
-        flash("Acesso não autorizado", "error")
-        return redirect(url_for("user.login_page"))
     
     with data_lock:
         sensor = devices["sensors"].get(sensor_id)
