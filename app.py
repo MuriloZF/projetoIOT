@@ -10,7 +10,7 @@ from controllers.sensor import sensor_main
 from controllers.actuator import actuator_main
 from models.user.user import User
 from models.db import db
-
+import cryptography
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://termcon:termcon@localhost:3306/term_control"
@@ -76,8 +76,12 @@ def detailed_dashboard_page():
 
     if role == "admin":
         base_template = "baseAdmin.html"
-    else:
+    
+    elif role == "historico":
+        base_template = "baseHistorico.html"
+    elif role == "user":
         base_template = "baseUser.html"
+    
 
     return render_template("dashboard.html",
                          role=role,
@@ -88,6 +92,23 @@ def detailed_dashboard_page():
                          umidade=devices["sensors"].get("humidity_default", {}).get("value", "N/A"),
                          command_history=command_history[-10:])
 
+@app.route("/history")
+def history_page():
+    role = session.get("role", "user")
+
+    if role == "admin":
+        base_template = "baseAdmin.html"
+    
+    elif role == "historico":
+        base_template = "baseHistorico.html"
+    else:
+        base_template = "baseUser.html"
+    
+
+    return render_template("history_data.html",
+                         role=role,
+                         base_template=base_template,
+                         command_history=command_history[-10:])
 # --- API Endpoints ---
 @app.route("/api/device_data")
 def get_device_data():
