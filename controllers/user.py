@@ -1,21 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from models.user.user import User
 from models.db import db
 from functools import wraps
 
 user_bp = Blueprint("user", __name__, template_folder="templates")
-
-# User storage (replace with database in production)
-users_dict = {   
-    "user1": "1234",
-    "user2": "1234"
-}
-
-admins_dict = {
-    "admin1": "1234",
-    "admin2": "1234",
-    "admin3": "1234"
-}
 
 def admin_required(f):
     @wraps(f)
@@ -42,7 +30,10 @@ def login_page():
             print(f"Usuário logado: {user.username}, role: {user.role}")
             session["user_id"] = user.username
             session["role"] = user.role
-            return redirect(url_for("home_page_dashboard"))
+            if(user.role == "history"):
+                return redirect(url_for("history_page"))
+            else:
+                return redirect(url_for("home_page_dashboard"))
         else:
             return render_template("login.html", error="Credenciais inválidas")
     
@@ -72,70 +63,77 @@ def register_user_page():
 @admin_required
 @user_bp.route("/manage")
 def manage_user_page():
-    # Combine both dictionaries with type information
-    all_users = []
-    for username, password in users_dict.items():
-        all_users.append({
-            'id': username,
-            'username': username,
-            'type': 'user',
-            'password': password  # Note: In production, don't expose passwords
+    all_users = User.query.filter_by(role="user").all()
+    user_data = []
+    for user in all_users:
+            user_data.append({
+                'id' : user.id,
+                'username': user.username,
+                'role': user.role
+            })
+    
+    all_admins = User.query.filter_by(role="admin").all()
+    admin_data = []
+    for admin in all_admins:
+        admin_data.append({
+            'id' : admin.id,
+            'username' : admin.username,
+            'role' : admin.role
         })
     
-    for username, password in admins_dict.items():
-        all_users.append({
-            'id': username,
-            'username': username,
-            'type': 'admin',
-            'password': password  # Note: In production, don't expose passwords
+    all_history = User.query.filter_by(role="history").all()
+    history_data = []
+    for history in all_history:
+        history_data.append({
+            'id': history.id,
+            'username' : history.username,
+            'role' : history.role
         })
-    
+
+    all_users = history_data + user_data + admin_data
     return render_template("manage_user.html", users=all_users)
 
 @admin_required
 @user_bp.route("/delete/<username>", methods=["POST"])
-def delete_user(username): 
+def delete_user(username):
+    user = User.query.filter_by(username=username).first() 
     if username == session.get("user_id"):
         flash("Você não pode remover a si mesmo", "error")
-    elif username in users_dict:
-        users_dict.pop(username)
-    elif username in admins_dict:
-        admins_dict.pop(username)
+    elif user:
+        db.session.delete(user)
+        db.session.commit()
+        flash(f"Usuário: {user.username} foi removido com sucesso.", "success")
     
     return redirect(url_for("user.manage_user_page"))
 
 @admin_required
 @user_bp.route("/edit/<username>", methods=["GET", "POST"])
-def edit_user_page(username):    
+def edit_user_page(username):
+    user = User.query.filter_by(username=username).first()    
     if request.method == "POST":
         new_username = request.form.get("username")
         new_password = request.form.get("password")
         new_privilege = request.form.get("privilege", "0")
         
-        if not new_username or not new_password:
-            return render_template("edit_user.html", 
-                                user={"username": username, "type": "admin" if username in admins_dict else "user"}, 
-                                error="Todos os campos são obrigatórios")
-        
-        # Check if username is being changed to one that already exists (excluding current user)
-        if (new_username != username and 
-            (new_username in users_dict or new_username in admins_dict)):
-            return render_template("edit_user.html", 
-                                user={"username": username, "type": "admin" if username in admins_dict else "user"}, 
-                                error=f"Usuário {new_username} já existe")
-        
-        # Remove from old dictionary
-        if username in users_dict:
-            users_dict.pop(username)
-        elif username in admins_dict:
-            admins_dict.pop(username)
-        
-        # Add to new dictionary based on privilege
-        if new_privilege == "1":
-            admins_dict[new_username] = new_password
-        else:
-            users_dict[new_username] = new_password
-        
+        if new_username:
+            current_user = User.query.filter_by(username=new_username).first()
+            if current_user and current_user.username != username:
+                error_message = f"Usuário {new_username} já existe. Tente outro nome."
+                return render_template("edit_user.html", user=user, error=error_message)
+        user.username = new_username
+       
+        if new_password:
+            user.password = new_password
+       
+        if new_privilege:
+            if new_privilege == "1":
+                user.role = "admin"
+            elif new_privilege == "2":
+                user.role = "history"
+            else:
+                user.role = "user"
+        db.session.commit()
+
         # Update session if editing own account
         if username == session.get("user_id"):
             session["user_id"] = new_username
@@ -143,6 +141,4 @@ def edit_user_page(username):
         return redirect(url_for("user.manage_user_page"))
     
     # GET request - show edit form
-    user_type = "admin" if username in admins_dict else "user"
-    return render_template("edit_user.html", 
-                         user={"username": username, "type": user_type})
+    return render_template("edit_user.html", user=user)

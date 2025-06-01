@@ -12,11 +12,17 @@ from models.user.user import User
 from models.db import db
 from models.iot.actuator_model import Actuator
 from models.iot.sensor_model import Sensor
-
+import cryptography
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://termcon:termcon@localhost:3306/term_control"
 
+def standard_admin():
+    adminStandard = User.query.filter_by(username="adminStandard", password="1234", role="admin").first()
+    if not adminStandard:
+        adminStandard = User(username="adminStandard", password="1234", role="admin")
+        db.session.add(adminStandard)
+        db.session.commit()
 
 db.init_app(app)
 app.secret_key = "supersecretkey_for_iot_project"
@@ -95,12 +101,13 @@ def detailed_dashboard_page():
 
     if role == "admin":
         base_template = "baseAdmin.html"
-    else:
+    
+    elif role == "user":
         base_template = "baseUser.html"
-
-    temperatura = temp_sensor.value if temp_sensor else "N/A"
+        
     umidade = hum_sensor.value if hum_sensor else "N/A"
-
+    temperatura = temp_sensor.value if temp_sensor else "N/A"
+    
     return render_template("dashboard.html",
                          role=role,
                          base_template=base_template,
@@ -110,6 +117,23 @@ def detailed_dashboard_page():
                          umidade=umidade,
                          command_history=command_history[-10:])
 
+@app.route("/history")
+def history_page():
+    role = session.get("role", "user")
+
+    if role == "admin":
+        base_template = "baseAdmin.html"
+    
+    elif role == "user":
+        base_template = "baseUser.html"
+    else:
+        base_template = "baseHistorico.html"
+    
+
+    return render_template("history_data.html",
+                         role=role,
+                         base_template=base_template,
+                         command_history=command_history[-10:])
 # --- API Endpoints ---
 @app.route("/api/device_data")
 def get_device_data():
@@ -231,5 +255,6 @@ def forbidden_error(e):
 if __name__ == "__main__":
     print("🌐 Starting IoT Dashboard...")
     with app.app_context():
+        standard_admin()
         db.create_all()
     app.run(host="0.0.0.0", port=5000, debug=True)
