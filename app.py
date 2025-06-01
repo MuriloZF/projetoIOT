@@ -85,10 +85,7 @@ def detailed_dashboard_page():
     
     elif role == "user":
         base_template = "baseUser.html"
-    else:
-        base_template = "baseHistorico.html"
     
-
     return render_template("dashboard.html",
                          role=role,
                          base_template=base_template,
