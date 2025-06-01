@@ -1,0 +1,49 @@
+{% extends "baseAdmin.html" %}
+{% block title %} <title>Registrar Sensor</title> {% endblock %}
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 md:p-8 max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">Registrar Novo Sensor</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 mx-auto max-w-md p-4 rounded-md text-center {% if category == 'success' %}bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100{% else %}bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form action="{{ url_for('sensor_main.register_sensor_page') }}" method="post" class="space-y-6 max-w-md mx-auto">
+            <div class="text-center">
+                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Sensor*</label>
+                <input type="text" id="name" name="name" required value="{{ request.form.name if request.form.name else '' }}"
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100 text-center">
+            </div>
+            <div class="text-center">
+                <label for="topic" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tópico MQTT*</label>
+                <input type="text" id="topic" name="topic" required value="{{ request.form.topic if request.form.topic else '' }}"
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100 text-center">
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">Exemplo: iot/sensor/temperatura</p>
+            </div>
+            <div class="text-center">
+                <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Dado</label>
+                <input type="text" id="type" name="type" placeholder="Ex: °C, %, ppm" value="{{ request.form.type if request.form.type else '' }}"
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100 text-center">
+            </div>
+            
+            <div class="flex justify-center space-x-4 mt-8">
+                <a href="{{ url_for('sensor_main.manage_sensors_page') }}" 
+                   class="py-2 px-6 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150">
+                    Voltar
+                </a>
+                <button type="submit" 
+                        class="py-2 px-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150">
+                    Registrar Sensor
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "baseAdmin.html" if is_admin_viewing else "baseUser.html" %} {# Dynamically choose base template #}
+
+{% block title %}
+    {% if is_admin_viewing %}
+        <title>Registrar Novo Usuário (Admin)</title>
+    {% else %}
+        <title>Registrar Nova Conta</title>
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 md:p-8 max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">
+            {% if is_admin_viewing %}
+                Registrar Novo Usuário
+            {% else %}
+                Registrar Nova Conta
+            {% endif %}
+        </h1>
+        
+        {# Display flashed messages #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="p-4 mb-4 text-sm rounded-lg 
+                          {% if category == 'error' %} bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200 
+                          {% elif category == 'success' %} bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200
+                          {% else %} bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 {% endif %}" 
+                   role="alert">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {# Display error passed directly to template (if any) #}
+        {% if error %}
+            <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900 dark:text-red-200" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form action="{{ url_for('user.register_user_page') }}" method="post" class="space-y-6">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome de Usuário:</label>
+                <input type="text" id="username" name="username" placeholder="Escolha um nome de usuário" required value="{{ username or '' }}"
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Senha:</label>
+                <input type="password" id="password" name="password" placeholder="Crie uma senha" required 
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            <div>
+                <label for="confirm_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirmar Senha:</label>
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="Digite a senha novamente" required 
+                       class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+            </div>
+            
+            {# Conditionally show privilege selection only for admins #}
+            {% if is_admin_viewing %}
+            <div>
+                <label for="privilegio" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Privilégio:</label>
+                <select id="privilegio" name="privilegio" 
+                        class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
+                    <option value="0">Usuário</option>
+                    <option value="1">Administrador</option>
+                    <option value="2">Controlador</option>
+                </select>
+            </div>
+            {% endif %}
+            
+            <div class="flex justify-center pt-4">
+                <button type="submit" 
+                        class="w-full md:w-auto flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-custom-red hover:bg-custom-red-darker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150">
+                    {% if is_admin_viewing %}Registrar Usuário{% else %}Registrar Conta{% endif %}
+                </button>
+            </div>
+            
+            {# Show login link only for public registration #}
+            {% if not is_admin_viewing %}
+             <p class="text-center text-sm text-gray-600 dark:text-gray-400 pt-4">
+                Já tem uma conta? <a href="{{ url_for('user.login_page') }}" class="font-medium text-custom-red hover:text-custom-red-darker">Faça login aqui</a>
+            </p>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
