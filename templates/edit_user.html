@@ -21,7 +21,7 @@
                         class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900 dark:text-gray-100">
                     <option value="0" {% if user.type == 'user' %}selected{% endif %}>Usuário</option>
                     <option value="1" {% if user.type == 'admin' %}selected{% endif %}>Administrador</option>
-                    <optin value="2" {% if user.type == 'historico' %}selected{% endif %}>Histórico</optin>
+                    <option value="2" {% if user.type == 'historico' %}selected{% endif %}>Histórico</option>
                 </select>
             </div>
             
