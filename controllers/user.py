@@ -17,6 +17,12 @@ admins_dict = {
     "admin3": "1234"
 }
 
+history_dict = {
+    "history1": "1234",
+    "history2": "1234",
+    "history3": "1234"
+}
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -89,7 +95,13 @@ def manage_user_page():
             'type': 'admin',
             'password': password  # Note: In production, don't expose passwords
         })
-    
+    for username, password in history_dict.items():
+        all_users.append({
+            'id': username,
+            'username': username,
+            'type': 'admin',
+            'password': password  # Note: In production, don't expose passwords
+        })
     return render_template("manage_user.html", users=all_users)
 
 @admin_required
