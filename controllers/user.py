@@ -87,7 +87,7 @@ def manage_user_page():
             'role' : history.role
         })
 
-    all_users = user_data + admin_data + history_data
+    all_users = history_data + user_data + admin_data
     return render_template("manage_user.html", users=all_users)
 
 @admin_required
