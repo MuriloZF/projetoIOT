@@ -83,10 +83,10 @@ def detailed_dashboard_page():
     if role == "admin":
         base_template = "baseAdmin.html"
     
-    elif role == "historico":
-        base_template = "baseHistorico.html"
     elif role == "user":
         base_template = "baseUser.html"
+    else:
+        base_template = "baseHistorico.html"
     
 
     return render_template("dashboard.html",
@@ -105,10 +105,10 @@ def history_page():
     if role == "admin":
         base_template = "baseAdmin.html"
     
-    elif role == "historico":
-        base_template = "baseHistorico.html"
-    else:
+    elif role == "user":
         base_template = "baseUser.html"
+    else:
+        base_template = "baseHistorico.html"
     
 
     return render_template("history_data.html",
