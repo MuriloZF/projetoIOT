@@ -178,42 +178,69 @@
     }
 
     // Function to update all device data
-    function updateDeviceData() {
-        fetch("/api/device_data")
-            .then(response => response.json())
-            .then(data => {
-                // Update Temperature
-                const tempSensor = data.sensors.temperature_default;
-                if (tempSensor) {
-                    document.getElementById("temperatura-value").textContent = tempSensor.value + " " + (tempSensor.data_type || "°C");
-                    document.getElementById("temperatura-timestamp").textContent = "Última atualização: " + tempSensor.timestamp;
-                }
+    // Function to update all device data
+function updateDeviceData() {
+    fetch("/api/device_data")
+        .then(response => response.json())
+        .then(data => {
+            // Tópicos fixos (substitua com seus tópicos reais)
+            const TEMPERATURE_TOPIC = "iot/sensor/temperatura";
+            const HUMIDITY_TOPIC = "iot/sensor/umidade";
+            const VALVE_STATUS_TOPIC = "iot/actuator/Mangueira_de_agua/status";
+            const VENTILATOR_STATUS_TOPIC = "iot/actuator/Ventilador/status";
+            const HEATER_STATUS_TOPIC = "iot/actuator/Aquecedor/status";
 
-                // Update Humidity
-                const humSensor = data.sensors.humidity_default;
-                if (humSensor) {
-                    document.getElementById("umidade-value").textContent = humSensor.value + " " + (humSensor.data_type || "%");
-                    document.getElementById("umidade-timestamp").textContent = "Última atualização: " + humSensor.timestamp;
-                }
+            // Update Temperature
+            const tempSensor = data.sensors[TEMPERATURE_TOPIC];
+            if (tempSensor) {
+                document.getElementById("temperatura-value").textContent = 
+                    (tempSensor.value !== null ? tempSensor.value : "N/A") + " " + (tempSensor.data_type || "°C");
+                document.getElementById("temperatura-timestamp").textContent = 
+                    "Última atualização: " + tempSensor.timestamp;
+            }
 
-                // Update all actuators
-                ['actuator_valve_default', 'actuator_vent_default', 'actuator_heater_default'].forEach(actuatorId => {
-                    const actuator = data.actuators[actuatorId];
-                    const statusElement = document.getElementById(`${actuatorId}-status`);
-                    
-                    if (actuator && statusElement) {
-                        statusElement.textContent = actuator.state;
-                        statusElement.className = `text-3xl font-bold ${
-                            actuator.state === "Ligado" 
-                                ? "text-green-500 dark:text-green-400" 
-                                : "text-red-500 dark:text-red-400"
-                        }`;
-                    }
-                });
-            })
-            .catch(error => console.error("Error fetching device data:", error));
+            // Update Humidity
+            const humSensor = data.sensors[HUMIDITY_TOPIC];
+            if (humSensor) {
+                document.getElementById("umidade-value").textContent = 
+                    (humSensor.value !== null ? humSensor.value : "N/A") + " " + (humSensor.data_type || "%");
+                document.getElementById("umidade-timestamp").textContent = 
+                    "Última atualização: " + humSensor.timestamp;
+            }
+
+            // Update Water Valve
+            const waterValve = data.actuators[VALVE_STATUS_TOPIC];
+            if (waterValve) {
+                updateActuatorStatus('water_valve', waterValve.state);
+            }
+
+            // Update Ventilator
+            const ventilator = data.actuators[VENTILATOR_STATUS_TOPIC];
+            if (ventilator) {
+                updateActuatorStatus('ventilator', ventilator.state);
+            }
+
+            // Update Heater
+            const heater = data.actuators[HEATER_STATUS_TOPIC];
+            if (heater) {
+                updateActuatorStatus('heater', heater.state);
+            }
+        })
+        .catch(error => console.error("Error fetching device data:", error));
+}
+
+// Helper function to update actuator status
+function updateActuatorStatus(actuatorType, state) {
+    const statusElement = document.getElementById(`${actuatorType}-status`);
+    if (statusElement) {
+        statusElement.textContent = state;
+        statusElement.className = `text-3xl font-bold ${
+            state === "Ligado" 
+                ? "text-green-500 dark:text-green-400" 
+                : "text-red-500 dark:text-red-400"
+        }`;
     }
-
+}
     // Initialize
     document.addEventListener("DOMContentLoaded", () => {
         updateDeviceData();

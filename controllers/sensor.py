@@ -4,6 +4,8 @@ import uuid
 import time
 import paho.mqtt.client as mqtt
 from functools import wraps
+from models.db import db
+from models.iot.sensor_model import Sensor
 
 sensor_main = Blueprint('sensor_main', __name__, template_folder="templates")
 
@@ -21,90 +23,76 @@ def admin_required(f):
 def register_sensor_page():
     
     if request.method == "POST":
-        sensor_name = request.form.get("name")
-        sensor_topic = request.form.get("topic")
-        sensor_type = request.form.get("type", "")
+        sensor_name = request.form.get("name", "").strip()
+        sensor_topic = request.form.get("topic", "").strip()
+        sensor_type = request.form.get("type", "").strip()
         
         if not all([sensor_name, sensor_topic]):
             flash("Nome e tópico do sensor são obrigatórios", "error")
             return redirect(url_for("sensor_main.register_sensor_page"))
         
-        with data_lock:
-            # Check if topic already exists
-            if any(s["topic"] == sensor_topic for s in devices["sensors"].values()):
+        for sensor in Sensor.get_sensors():
+            if sensor.topic == sensor_topic:
                 flash("Já existe um sensor com este tópico MQTT", "error")
                 return redirect(url_for("sensor_main.register_sensor_page"))
-            
-            sensor_id = f"sensor_{uuid.uuid4().hex[:6]}"
-            devices["sensors"][sensor_id] = {
-                "id": sensor_id,
-                "name": sensor_name,
-                "topic": sensor_topic,
-                "value": "N/A",
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "data_type": sensor_type,
-                "is_default": False
-            }
-            
-            # Subscribe to MQTT topic
-            mqtt_client.subscribe(sensor_topic)
-            print(f"🔔 Subscribed to new sensor topic: {sensor_topic}")
-            
-            flash(f"Sensor '{sensor_name}' registrado com sucesso!", "success")
-            return redirect(url_for("sensor_main.manage_sensors_page"))
+        
+        Sensor.save_sensor(name = sensor_name, topic = sensor_topic, unit = sensor_type)
+        
+        # Subscribe to MQTT topic
+        mqtt_client.subscribe(sensor_topic)
+        print(f"🔔 Subscribed to new sensor topic: {sensor_topic}")
+        
+        flash(f"Sensor '{sensor_name}' registrado com sucesso!", "success")
+        return redirect(url_for("sensor_main.manage_sensors_page"))
     
     return render_template("register_sensor.html")
 
 @admin_required
 @sensor_main.route("/manage")
 def manage_sensors_page():
-    
-    with data_lock:
-        sensors_list = list(devices["sensors"].values())
-        # Sort by timestamp (newest first)
-        sensors_list.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
-    
-    return render_template("manage_sensor.html", devices=sensors_list)
+    sensors = Sensor.get_sensors()    
+    return render_template("manage_sensor.html", sensors=sensors)
 
 @admin_required
-@sensor_main.route("/delete/<sensor_id>", methods=["POST"])
+@sensor_main.route("/delete/<int:sensor_id>", methods=["POST"])
 def delete_sensor(sensor_id):
-    with data_lock:
-        if sensor_id in devices["sensors"] and not devices["sensors"][sensor_id].get("is_default", False):
-            topic_to_unsubscribe = devices["sensors"][sensor_id].get("topic")
-            if topic_to_unsubscribe:
-                mqtt_client.unsubscribe(topic_to_unsubscribe)
-                print(f"🔕 Unsubscribed from sensor topic: {topic_to_unsubscribe}")
-            del devices["sensors"][sensor_id]
-            print(f"🗑️ Deleted sensor: {sensor_id}")
-        else:
-            print(f"⚠️ Attempted to delete non-existent or default sensor: {sensor_id}")
-    return redirect(url_for("sensor_main.manage_sensors_page"))
+    from app import app
+    with app.app_context():
+        sensor = Sensor.query.get(sensor_id)
+
+        if not sensor:
+            print(f"⚠️ Sensor com ID {sensor_id} não encontrado.")
+            return redirect(url_for("sensor_main.manage_sensors_page"))
+
+        if sensor.topic:
+            mqtt_client.unsubscribe(sensor.topic)
+            print(f"🔕 Unsubscrito do tópico: {sensor.topic}")
+
+        Sensor.delete_sensor(sensor_id)
+
+        flash(f"Atuador '{sensor.name}' removido com sucesso", "success")
+        print(f"🗑️ Deleted actuator: {sensor.name}")
+        return redirect(url_for("sensor_main.manage_sensors_page"))
 
 @admin_required
-@sensor_main.route("/edit/<sensor_id>", methods=["GET", "POST"])
+@sensor_main.route("/edit/<int:sensor_id>", methods=["GET", "POST"])
 def edit_sensor(sensor_id):
+    sensor = Sensor.get_single_sensor(sensor_id)
+    if not sensor:
+        flash("Sensor não encontrado!", "error")
+        return redirect(url_for("sensor_main.manage_sensors_page"))
     
-    with data_lock:
-        sensor = devices["sensors"].get(sensor_id)
-        if not sensor:
-            flash("Sensor não encontrado!", "error")
-            return redirect(url_for("sensor_main.manage_sensors_page"))
+    if request.method == "POST":
+        sensor_name = request.form.get("sensor_name", "").strip()
+        data_type = request.form.get("data_type", "").strip()
         
-        if request.method == "POST":
-            sensor_name = request.form.get("sensor_name", "").strip()
-            data_type = request.form.get("data_type", "").strip()
-            
-            if not sensor_name:
-                flash("Nome do sensor é obrigatório!", "error")
-                return render_template("edit_sensor.html", sensor=sensor)
-            
-            # Update sensor data
-            sensor["name"] = sensor_name
-            sensor["data_type"] = data_type
-            sensor["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
-            
-            flash("Sensor atualizado com sucesso!", "success")
-            return redirect(url_for("sensor_main.manage_sensors_page"))
+        if not sensor_name:
+            flash("Nome do sensor é obrigatório!", "error")
+            return render_template("edit_sensor.html", sensor=sensor)
+        
+        Sensor.update_sensor(sensor_id, sensor_name, unit = data_type)
+        
+        flash("Sensor atualizado com sucesso!", "success")
+        return redirect(url_for("sensor_main.manage_sensors_page"))
     
     return render_template("edit_sensor.html", sensor=sensor)

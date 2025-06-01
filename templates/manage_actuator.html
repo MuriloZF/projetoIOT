@@ -21,7 +21,7 @@
             {% endif %}
         {% endwith %}
 
-        {% if devices %}
+        {% if actuators %}
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow">
                     <thead class="bg-gray-50 dark:bg-gray-600">
@@ -34,31 +34,31 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-                        {% for device in devices %}
+                        {% for actuator in actuators %}
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-150">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ device.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device.command_topic }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ device.status_topic if device.status_topic else "N/A" }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ actuator.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ actuator.topic_command }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ actuator.topic_status if actuator.topic_status else "N/A" }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        {% if device.state == 'Ligado' %}bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
+                                        {% if actuator.is_active %}bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
                                         {% else %}bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-100{% endif %}">
-                                        {{ device.state }}
+                                        {{ 'Ligado' if actuator.is_active else 'Desligado' }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center space-x-2">
-                                    <a href="{{ url_for('actuator_main.edit_actuator_page', actuator_id=device.id) }}" 
+                                    <a href="{{ url_for('actuator_main.edit_actuator_page', actuator_id=actuator.id) }}" 
                                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-150">
                                         Editar
                                     </a>
                                     <span class="text-gray-400">|</span>
-                                    <form action="{{ url_for('actuator_main.toggle_actuator', actuator_id=device.id) }}" method="post" class="inline">
+                                    <form action="{{ url_for('actuator_main.toggle_actuator', actuator_id=actuator.id) }}" method="post" class="inline">
                                         <button type="submit" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors duration-150">
-                                            {{ 'Desligar' if device.state == 'Ligado' else 'Ligar' }}
+                                            {{ 'Desligar' if actuator.is_active else 'Ligar' }}
                                         </button>
                                     </form>
                                     <span class="text-gray-400">|</span>
-                                    <form action="{{ url_for('actuator_main.delete_actuator', actuator_id=device.id) }}" method="post" 
+                                    <form action="{{ url_for('actuator_main.delete_actuator', actuator_id=actuator.id) }}" method="post" 
                                           onsubmit="return confirm('Tem certeza que deseja remover este atuador?');" 
                                           class="inline">
                                         <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-150">

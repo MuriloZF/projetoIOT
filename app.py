@@ -1,6 +1,6 @@
 from flask import Flask,flash, render_template, Blueprint, request, jsonify, redirect, url_for, session
 
-from controllers.shared import mqtt_client, devices, command_history, data_lock, MQTT_BROKER_HOST, MQTT_BROKER_PORT, mqtt_thread_worker
+from controllers.shared import mqtt_client, devices, command_history, data_lock, MQTT_BROKER_HOST, MQTT_BROKER_PORT, mqtt_thread_worker, set_flask_app
 
 import time
 import threading
@@ -10,6 +10,8 @@ from controllers.sensor import sensor_main
 from controllers.actuator import actuator_main
 from models.user.user import User
 from models.db import db
+from models.iot.actuator_model import Actuator
+from models.iot.sensor_model import Sensor
 
 
 app = Flask(__name__)
@@ -19,13 +21,17 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://termcon:termcon@localho
 db.init_app(app)
 app.secret_key = "supersecretkey_for_iot_project"
 
+set_flask_app(app)
+
 # Register the user blueprint
 app.register_blueprint(user_bp, url_prefix="/user")
 app.register_blueprint(sensor_main, url_prefix="/sensor")
 app.register_blueprint(actuator_main, url_prefix="/actuator")
 
-
-threading.Thread(target=mqtt_thread_worker, daemon=True).start()
+with app.app_context():
+    db.create_all()
+    threading.Thread(target=mqtt_thread_worker, daemon=True).start()
+    print("🚀 Thread MQTT iniciado com contexto de aplicação")
 
 @app.before_request
 def verificar_autenticacao():
@@ -43,34 +49,47 @@ def verificar_autenticacao():
 @app.route("/home")
 def home_page_dashboard():
     with data_lock:
-        temp_sensor = devices["sensors"].get("temperature_default", {})
-        hum_sensor = devices["sensors"].get("humidity_default", {})
-        water_valve_actuator = devices["actuators"].get("water_valve_default", {})
-        ventilator_actuator = devices["actuators"].get("ventilator_default", {})
-        heater_actuator = devices["actuators"].get("heater_default", {})
-        all_actuators = list(devices["actuators"].values())
-        all_sensors = list(devices["sensors"].values())
-    
+        temp_sensor = Sensor.get_single_sensor(1)
+        hum_sensor = Sensor.get_single_sensor(3)
+        water_valve_actuator = Actuator.get_single_actuator(3)
+        ventilator_actuator = Actuator.get_single_actuator(2)
+        heater_actuator = Actuator.get_single_actuator(4)
+        all_actuators = Actuator.get_actuators()
+        all_sensors = Sensor.get_sensors()
+
     role = session.get("role", "user")
-    
+
+    umidade = hum_sensor.value if hum_sensor else "N/A"
+    temperatura = temp_sensor.value if temp_sensor else "N/A"
+    timestamp_temp = temp_sensor.created_at if temp_sensor else "-"
+    timestamp_umidade = hum_sensor.created_at if hum_sensor else "-"
+
+    mangueira_status = water_valve_actuator.is_active if water_valve_actuator else "Desconhecido"
+    ventilador_status = ventilator_actuator.is_active if ventilator_actuator else "Desconhecido"
+    aquecedor_status = heater_actuator.is_active if heater_actuator else "Desconhecido"
+
     return render_template("home.html",
                          role=role,
-                         temperatura=temp_sensor.get("value", "N/A"),
-                         timestamp_temp=temp_sensor.get("timestamp", "-"),
-                         umidade=hum_sensor.get("value", "N/A"),
-                         timestamp_umidade=hum_sensor.get("timestamp", "-"),
-                         mangueira_status=water_valve_actuator.get("state", "Desconhecido"),
-                         ventilador_status=ventilator_actuator.get("state", "Desconhecido"),
-                         aquecedor_status=heater_actuator.get("state", "Desconhecido"),
+                         temperatura=temperatura,
+                         timestamp_temp=timestamp_temp,
+                         umidade=umidade,
+                         timestamp_umidade=timestamp_umidade,
+                         mangueira_status=mangueira_status,
+                         ventilador_status=ventilador_status,
+                         aquecedor_status=aquecedor_status,
                          all_actuators=all_actuators,
                          all_sensors=all_sensors,
                          command_history=command_history[-10:])
 
+
 @app.route("/dashboard")
 def detailed_dashboard_page():
     with data_lock:
-        all_actuators = list(devices["actuators"].values())
-        all_sensors = list(devices["sensors"].values())
+        all_actuators = Actuator.get_actuators()
+        all_sensors = Sensor.get_sensors()
+
+        temp_sensor = Sensor.get_single_sensor(1)
+        hum_sensor = Sensor.get_single_sensor(3)
 
     role = session.get("role", "user")
 
@@ -79,13 +98,16 @@ def detailed_dashboard_page():
     else:
         base_template = "baseUser.html"
 
+    temperatura = temp_sensor.value if temp_sensor else "N/A"
+    umidade = hum_sensor.value if hum_sensor else "N/A"
+
     return render_template("dashboard.html",
                          role=role,
                          base_template=base_template,
                          all_actuators=all_actuators,
                          all_sensors=all_sensors,
-                         temperatura=devices["sensors"].get("temperature_default", {}).get("value", "N/A"),
-                         umidade=devices["sensors"].get("humidity_default", {}).get("value", "N/A"),
+                         temperatura=temperatura,
+                         umidade=umidade,
                          command_history=command_history[-10:])
 
 # --- API Endpoints ---
