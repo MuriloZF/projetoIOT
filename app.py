@@ -15,6 +15,12 @@ import cryptography
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://termcon:termcon@localhost:3306/term_control"
 
+def standard_admin():
+    adminStandard = User.query.filter_by(username="adminStandard", password="1234", role="admin").first()
+    if not adminStandard:
+        adminStandard = User(username="adminStandard", password="1234", role="admin")
+        db.session.add(adminStandard)
+        db.session.commit()
 
 db.init_app(app)
 app.secret_key = "supersecretkey_for_iot_project"
@@ -230,5 +236,6 @@ def forbidden_error(e):
 if __name__ == "__main__":
     print("🌐 Starting IoT Dashboard...")
     with app.app_context():
+        standard_admin()
         db.create_all()
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -39,7 +39,7 @@
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                         {% if user.type == 'admin' %}bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100
                                         {% else %}bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100{% endif %}">
-                                        {% if user.type == 'admin' %}Administrador{% else %}Usuário{% endif %}
+                                        {% if user.role == 'admin' %}Administrador{% else %}Usuário{% endif %}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
