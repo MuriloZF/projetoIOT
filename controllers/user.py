@@ -81,16 +81,16 @@ def manage_user_page():
             'role' : admin.role
         })
     
-    all_history = User.query.filter_by(role="history").all()
-    history_data = []
-    for history in all_history:
-        history_data.append({
-            'id': history.id,
-            'username' : history.username,
-            'role' : history.role
+    all_controller = User.query.filter_by(role="controller").all()
+    controller_data = []
+    for controller in all_controller:
+        controller_data.append({
+            'id': controller.id,
+            'username' : controller.username,
+            'role' : controller.role
         })
 
-    all_users = history_data + user_data + admin_data
+    all_users = user_data + controller_data + admin_data
     return render_template("manage_user.html", users=all_users)
 
 @admin_required
@@ -129,7 +129,7 @@ def edit_user_page(username):
             if new_privilege == "1":
                 user.role = "admin"
             elif new_privilege == "2":
-                user.role = "history"
+                user.role = "controller"
             else:
                 user.role = "user"
         db.session.commit()
