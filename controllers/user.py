@@ -30,10 +30,7 @@ def login_page():
             print(f"Usuário logado: {user.username}, role: {user.role}")
             session["user_id"] = user.username
             session["role"] = user.role
-            if(user.role == "history"):
-                return redirect(url_for("history_page"))
-            else:
-                return redirect(url_for("home_page_dashboard"))
+            return redirect(url_for("home_page_dashboard"))
         else:
             return render_template("login.html", error="Credenciais inválidas")
     
