@@ -14,13 +14,10 @@
             background-color: #111827; /* bg-gray-900 */
             color: #f3f4f6; /* text-gray-100 */
         }
-        .nav-link-admin {
-            @apply py-1 px-2 text-xs text-center text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors duration-150;
+        .nav-link-user {
+            @apply py-2 px-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md text-sm font-medium transition-colors duration-150;
         }
-        .admin-menu-item {
-            @apply flex items-center p-2 text-gray-100 rounded-lg hover:bg-gray-700;
-        }
-        .admin-card {
+        .user-card {
             @apply bg-gray-800 shadow-lg rounded-lg p-6 mb-6;
         }
     </style>
@@ -40,7 +37,7 @@
 </head>
 <body class="min-h-screen">
 
-<!-- Admin Navigation -->
+<!-- User Navigation -->
 <nav class="bg-gray-800 border-b border-gray-700 fixed w-full z-20 top-0">
     <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <a href="{{ url_for('home_page_dashboard') }}" class="flex items-center space-x-3 rtl:space-x-reverse">
@@ -48,16 +45,16 @@
         </a>
         <div class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
             <div class="relative">
-                <button type="button" class="flex text-sm bg-gray-700 rounded-full md:me-0 focus:ring-4 focus:ring-gray-600" id="admin-menu-button">
+                <button type="button" class="flex text-sm bg-gray-700 rounded-full md:me-0 focus:ring-4 focus:ring-gray-600" id="user-menu-button">
                     <span class="sr-only">Open user menu</span>
                     <div class="w-8 h-8 rounded-full bg-custom-red flex items-center justify-center text-white font-bold">
-                        {{ session.get('user_id', 'A')[0]|upper }}
+                        {{ session.get('user_id', 'U')[0]|upper }}
                     </div>
                 </button>
                 <!-- Dropdown menu -->
-                <div class="hidden absolute right-0 z-50 my-2 text-base list-none bg-gray-700 divide-y divide-gray-600 rounded-lg shadow" id="admin-dropdown">
+                <div class="hidden absolute right-0 z-50 my-2 text-base list-none bg-gray-700 divide-y divide-gray-600 rounded-lg shadow" id="user-dropdown">
                     <div class="px-4 py-3">
-                        <span class="block text-sm text-white">{{ session.get('user_id', 'Admin') }}</span>
+                        <span class="block text-sm text-white">{{ session.get('user_id', 'Controlador') }}</span>
                         <span class="block text-sm text-gray-400 truncate">Controlador</span>
                     </div>
                     <ul class="py-2">
@@ -68,7 +65,7 @@
                 </div>
             </div>
         </div>
-        <div class="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-admin">
+        <div class="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-user">
             <ul class="flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-600 rounded-lg bg-gray-800 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0">
                 <li>
                     <a href="{{ url_for('home_page_dashboard') }}" class="block py-2 px-3 text-white bg-red-400 rounded md:bg-transparent md:text-red-400 md:p-0" aria-current="page">Dashboard</a>
@@ -77,34 +74,31 @@
                     <a href="{{ url_for('detailed_dashboard_page') }}" class="block py-2 px-3 text-gray-300 rounded hover:bg-gray-700 hover:text-white md:hover:bg-transparent md:hover:text-red-400 md:p-0">Controle</a>
                 </li>
                 <li>
-                <a href="{{ url_for('detailed_dashboard_page') }}#eventHistory" class="admin-menu-item">
-                    <span class="ms-3">Histórico de Comandos</span>
-                </a>
-            </li>
+                    <a href="{{ url_for('history_page') }}#eventHistory" class="block py-2 px-3 text-gray-300 rounded hover:bg-gray-700 hover:text-white md:hover:bg-transparent md:hover:text-red-400 md:p-0">Histórico</a>
+                </li>
             </ul>
         </div>
     </div>
 </nav>
 
-
-<main class="pt-20 pb-10 pl-72 pr-4 sm:pr-6 lg:pr-8 max-w-screen-2xl">
+<main class="pt-20 pb-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
     {% block body %}{% endblock %}
 </main>
 
 <footer class="w-full bg-gray-800 shadow-md mt-auto">
-    <div class="max-w-screen-xl mx-auto px-4 py-6 text-center text-gray-400">
+    <div class="max-w-7xl mx-auto px-4 py-6 text-center text-gray-400">
         <p>&copy; 2025 Term Control. Todos os direitos reservados.</p>
     </div>
 </footer>
 
 <script>
-    // Admin menu toggle
-    const adminMenuButton = document.getElementById('admin-menu-button');
-    const adminMenu = document.getElementById('admin-dropdown');
+    // User menu toggle
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-dropdown');
     
-    if(adminMenuButton && adminMenu) {
-        adminMenuButton.addEventListener('click', () => {
-            adminMenu.classList.toggle('hidden');
+    if(userMenuButton && userMenu) {
+        userMenuButton.addEventListener('click', () => {
+            userMenu.classList.toggle('hidden');
         });
     }
 
