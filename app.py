@@ -4,7 +4,6 @@ from controllers.shared import mqtt_client, devices, command_history, data_lock,
 
 import time
 import threading
-# Import the user blueprint and user/admin dictionaries from user.py
 from controllers.user import user_bp
 from controllers.sensor import sensor_main
 from controllers.actuator import actuator_main
@@ -65,6 +64,15 @@ def home_page_dashboard():
 
     role = session.get("role", "user")
 
+    if role == "admin":
+        base_template = "baseAdmin.html"
+    
+    elif role == "controller":
+        base_template = "baseController.html"
+
+    else:
+        base_template = "baseUser.html"   
+
     umidade = hum_sensor.value if hum_sensor else "N/A"
     temperatura = temp_sensor.value if temp_sensor else "N/A"
     timestamp_temp = temp_sensor.created_at if temp_sensor else "-"
@@ -76,6 +84,7 @@ def home_page_dashboard():
 
     return render_template("home.html",
                          role=role,
+                         base_template=base_template,
                          temperatura=temperatura,
                          timestamp_temp=timestamp_temp,
                          umidade=umidade,
@@ -102,8 +111,11 @@ def detailed_dashboard_page():
     if role == "admin":
         base_template = "baseAdmin.html"
     
-    elif role == "user":
-        base_template = "baseUser.html"
+    elif role == "controller":
+        base_template = "baseController.html"
+
+    else:
+        base_template = "baseUser.html"   
         
     umidade = hum_sensor.value if hum_sensor else "N/A"
     temperatura = temp_sensor.value if temp_sensor else "N/A"
@@ -116,24 +128,21 @@ def detailed_dashboard_page():
                          temperatura=temperatura,
                          umidade=umidade,
                          command_history=command_history[-10:])
-
 @app.route("/history")
 def history_page():
     role = session.get("role", "user")
-
     if role == "admin":
         base_template = "baseAdmin.html"
-    
-    elif role == "user":
-        base_template = "baseUser.html"
+    elif role == "controller":
+        base_template = "baseController.html"
     else:
-        base_template = "baseHistorico.html"
+        base_template = "baseUser.html"        
     
-
     return render_template("history_data.html",
                          role=role,
                          base_template=base_template,
                          command_history=command_history[-10:])
+
 # --- API Endpoints ---
 @app.route("/api/device_data")
 def get_device_data():
