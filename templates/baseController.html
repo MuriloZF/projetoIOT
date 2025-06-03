@@ -81,33 +81,6 @@
     </div>
 </nav>
 
-<!-- Sidebar -->
-<aside id="sidebar" class="fixed top-16 left-0 z-10 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
-    <div class="h-full px-3 py-4 overflow-y-auto bg-gray-800">
-        <ul class="space-y-2 font-medium">
-            <li>
-                <a href="{{ url_for('user.register_user_page') }}" class="admin-menu-item">
-                    <span class="ms-3">Adicionar Usuário</span>
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('sensor_main.register_sensor_page') }}" class="admin-menu-item">
-                    <span class="ms-3">Registrar Sensor</span>
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('actuator_main.register_actuator_page') }}" class="admin-menu-item">
-                    <span class="ms-3">Registrar Atuador</span>
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('detailed_dashboard_page') }}#eventHistory" class="admin-menu-item">
-                    <span class="ms-3">Histórico de Comandos</span>
-                </a>
-            </li>
-        </ul>
-    </div>
-</aside>
 
 <main class="pt-20 pb-10 pl-72 pr-4 sm:pr-6 lg:pr-8 max-w-screen-2xl">
     {% block body %}{% endblock %}
