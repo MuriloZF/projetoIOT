@@ -1,5 +1,4 @@
 from flask import Flask,flash, render_template, Blueprint, request, jsonify, redirect, url_for, session
-
 from controllers.shared import mqtt_client, devices, command_history, data_lock, MQTT_BROKER_HOST, MQTT_BROKER_PORT, mqtt_thread_worker, set_flask_app
 
 import time
@@ -12,6 +11,8 @@ from models.db import db
 from models.iot.actuator_model import Actuator
 from models.iot.sensor_model import Sensor
 import cryptography
+from functools import wraps
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://termcon:termcon@localhost:3306/term_control"
@@ -23,6 +24,32 @@ def standard_admin():
         db.session.add(adminStandard)
         db.session.commit()
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") == None:
+            flash("Acesso não autorizado", "error")
+            return redirect(url_for("user.login_page"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") != "admin":
+            flash("Acesso não autorizado", "error")
+            return redirect(url_for("user.login_page"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def controller_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("role") != "admin" or session.get("role") != "controller":
+            flash("Acesso não autorizado", "error")
+            return redirect(url_for("user.login_page"))
+        return f(*args, **kwargs)
+    return decorated_function
 db.init_app(app)
 app.secret_key = "supersecretkey_for_iot_project"
 
@@ -52,6 +79,7 @@ def verificar_autenticacao():
 # --- Main Routes (Dashboard, etc.) ---
 @app.route("/")
 @app.route("/home")
+@login_required
 def home_page_dashboard():
     with data_lock:
         temp_sensor = Sensor.get_single_sensor(1)
@@ -98,6 +126,7 @@ def home_page_dashboard():
 
 
 @app.route("/dashboard")
+@login_required
 def detailed_dashboard_page():
     with data_lock:
         all_actuators = Actuator.get_actuators()
@@ -106,7 +135,7 @@ def detailed_dashboard_page():
         temp_sensor = Sensor.get_single_sensor(1)
         hum_sensor = Sensor.get_single_sensor(3)
 
-    role = session.get("role", "user")
+    role = session.get("role", "user", "controller")
 
     if role == "admin":
         base_template = "baseAdmin.html"
@@ -129,8 +158,9 @@ def detailed_dashboard_page():
                          umidade=umidade,
                          command_history=command_history[-10:])
 @app.route("/history")
+@login_required
 def history_page():
-    role = session.get("role", "user")
+    role = session.get("role", "user", "controller")
     if role == "admin":
         base_template = "baseAdmin.html"
     elif role == "controller":
@@ -145,6 +175,7 @@ def history_page():
 
 # --- API Endpoints ---
 @app.route("/api/device_data")
+@login_required
 def get_device_data():
     with data_lock:
         return jsonify({
@@ -154,6 +185,7 @@ def get_device_data():
         })
 
 @app.route("/api/actuator/raw_command", methods=["POST"])
+@login_required
 def actuator_raw_command():
     data = request.get_json()
     actuator_id = data.get("actuator_id")
@@ -200,6 +232,7 @@ def actuator_raw_command():
             return jsonify({"status": "error", "message": "Actuator not found"}), 404
         
 @app.route("/api/actuator/command", methods=["POST"])
+@login_required
 def actuator_command():
     data = request.get_json()
     actuator_id = data.get("actuator_id")
