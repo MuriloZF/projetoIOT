@@ -135,7 +135,7 @@ def detailed_dashboard_page():
         temp_sensor = Sensor.get_single_sensor(1)
         hum_sensor = Sensor.get_single_sensor(3)
 
-    role = session.get("role", "user", "controller")
+    role = session.get("role", "user")
 
     if role == "admin":
         base_template = "baseAdmin.html"
@@ -160,7 +160,7 @@ def detailed_dashboard_page():
 @app.route("/history")
 @login_required
 def history_page():
-    role = session.get("role", "user", "controller")
+    role = session.get("role", "user")
     if role == "admin":
         base_template = "baseAdmin.html"
     elif role == "controller":
